@@ -1,0 +1,169 @@
+@font-face {
+    font-family: "Roboto-Regular";
+    src: url("@/assets/fonts/Roboto-Regular.ttf");
+}
+
+@font-face {
+    font-family: "Roboto-Medium";
+    src: url("@/assets/fonts/Roboto-Medium.ttf");
+}
+
+@font-face {
+    font-family: "Roboto-Bold";
+    src: url("@/assets/fonts/Roboto-Bold.ttf");
+}
+
+/* ===== Fonts ===== */
+@mixin text_Regular {
+    font-family: "Roboto-Regular";
+}
+
+@mixin text_Medium {
+    font-family: "Roboto-Medium";
+}
+
+@mixin text_Bold {
+    font-family: "Roboto-Bold";
+}
+/* ================= */
+
+/* ===== H1 Size ===== */
+@mixin text_H1_Size {
+    font-size: $ui-step * 22;
+    line-height: $ui-step * 24;
+}
+
+@mixin text_H1_Regular {
+    @include text_Regular;
+    @include text_H1_Size;
+}
+
+@mixin text_H1_Medium {
+    @include text_Medium;
+    @include text_H1_Size;
+}
+
+@mixin text_H1_Bold {
+    @include text_Bold;
+    @include text_H1_Size;
+}
+/* =================== */
+
+/* ===== XL Size ===== */
+@mixin text_XL_Size {
+    font-size: $ui-step * 11;
+    line-height: $ui-step * 12;
+}
+
+@mixin text_XL_Regular {
+    @include text_Regular;
+    @include text_XL_Size;
+}
+
+@mixin text_XL_Medium {
+    @include text_Medium;
+    @include text_XL_Size;
+}
+
+@mixin text_XL_Bold {
+    @include text_Bold;
+    @include text_XL_Size;
+}
+/* =================== */
+
+/* ===== L Size ===== */
+@mixin text_L_Size {
+    font-size: $ui-step * 8;
+    line-height: $ui-step * 9;
+}
+
+@mixin text_L_Regular {
+    @include text_Regular;
+    @include text_L_Size;
+}
+
+@mixin text_L_Medium {
+    @include text_Medium;
+    @include text_L_Size;
+}
+
+@mixin text_L_Bold {
+    @include text_Bold;
+    @include text_L_Size;
+}
+/* ================== */
+
+/* ===== M Size ===== */
+@mixin text_M_Size {
+    font-size: $ui-step * 7;
+    line-height: $ui-step * 8;
+}
+
+@mixin text_M_Regular {
+    @include text_Regular;
+    @include text_M_Size;
+}
+
+@mixin text_M_Medium {
+    @include text_Medium;
+    @include text_M_Size;
+}
+
+@mixin text_M_Bold {
+    @include text_Bold;
+    @include text_M_Size;
+}
+/* ================== */
+
+/* ===== S Size ===== */
+@mixin text_S_Size {
+    font-size: $ui-step * 5;
+    line-height: $ui-step * 6;
+}
+
+@mixin text_S_Regular {
+    @include text_Regular;
+    @include text_M_Size;
+}
+
+@mixin text_S_Medium {
+    @include text_Medium;
+    @include text_M_Size;
+}
+
+@mixin text_S_Bold {
+    @include text_Bold;
+    @include text_M_Size;
+}
+/* ================== */
+
+/* ===== XS Size ===== */
+@mixin text_XS_Size {
+    font-size: $ui-step * 4;
+    line-height: $ui-step * 5;
+}
+
+@mixin text_XS_Regular {
+    @include text_Regular;
+    @include text_M_Size;
+}
+
+@mixin text_XS_Medium {
+    @include text_Medium;
+    @include text_M_Size;
+}
+
+@mixin text_XS_Bold {
+    @include text_Bold;
+    @include text_M_Size;
+}
+
+/* =================== */
+
+/* ===== Set defaults styles ===== */
+
+* {
+    @include text_M_Regular;
+}
+
+/* =============================== */

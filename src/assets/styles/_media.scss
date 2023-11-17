@@ -1,0 +1,7 @@
+$mobileSizeWidth: 550px;
+
+@mixin mobileMedia {
+    @media (max-width: $mobileSizeWidth) {
+        @content;
+    }
+}
