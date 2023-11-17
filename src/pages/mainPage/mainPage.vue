@@ -1,15 +1,21 @@
 <template>
     <div class="mainPage">
-        <div class="mainPage__leftToolBlock">
-            mainPage__leftToolBlock
+        <div class="mainPage__sideBlock">
+            <div class="mainPage__sideBlock__title">
+                Схема
+            </div>
         </div>
 
         <div class="mainPage__mainBlock">
-            mainPage__mainBlock
+            <div class="mainPage__mainBlock__title">
+                Редактор
+            </div>
         </div>
 
-        <div class="mainPage__rightToolBlock">
-            mainPage__rightToolBlock
+        <div class="mainPage__sideBlock">
+            <div class="mainPage__sideBlock__title">
+                Стили
+            </div>
         </div>
     </div>
 </template>

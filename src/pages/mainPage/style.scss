@@ -5,23 +5,25 @@
     display: flex;
 
     &__mainBlock,
-    &__leftToolBlock,
-    &__rightToolBlock {
-        border: 1px solid black;
+    &__sideBlock {
+        text-align: center;
+
+        &__title {
+            padding: $ui-step * 3 0;
+
+            border-bottom: 1px solid $primary-black;
+        }
     }
 
-    &__leftToolBlock,
-    &__rightToolBlock {
+    &__sideBlock {
         width: 17%;
     }
 
     &__mainBlock {
         width: 66%;
 
-        text-align: center;
-    }
-
-    &__rightToolBlock {
-        text-align: right;
+        border: 1px solid $primary-black;
+        border-top: none;
+        border-bottom: none;
     }
 }
