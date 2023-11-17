@@ -1,0 +1,27 @@
+.mainPage {
+    width: 100dvw;
+    min-height: 100dvh;
+
+    display: flex;
+
+    &__mainBlock,
+    &__leftToolBlock,
+    &__rightToolBlock {
+        border: 1px solid black;
+    }
+
+    &__leftToolBlock,
+    &__rightToolBlock {
+        width: 17%;
+    }
+
+    &__mainBlock {
+        width: 66%;
+
+        text-align: center;
+    }
+
+    &__rightToolBlock {
+        text-align: right;
+    }
+}
