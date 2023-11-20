@@ -1,17 +1,18 @@
 .mainPage {
     width: 100dvw;
-    min-height: 100dvh;
+    height: 100dvh;
 
     display: flex;
 
     &__mainBlock,
     &__sideBlock {
-        text-align: center;
-
+        
         &__title {
             padding: $ui-step * 3 0;
-
+            
             border-bottom: 1px solid $primary-black;
+
+            text-align: center;
         }
     }
 
@@ -21,9 +22,19 @@
 
     &__mainBlock {
         width: 66%;
+        height: 100%;
 
         border: 1px solid $primary-black;
         border-top: none;
         border-bottom: none;
+
+        &__canvasContainer {
+            height: 100%;
+
+            #canvasEditor {
+                width: 100%;
+                height: 100%;
+            }
+        }
     }
 }
