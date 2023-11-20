@@ -12,7 +12,7 @@
             </div>
 
             <div ref="canvasContainer" class="mainPage__mainBlock__canvasContainer">
-                <canvas id="canvasEditor"></canvas>
+                <canvas ref="canvasTag" id="canvasEditor"></canvas>
             </div>
         </div>
 
@@ -26,13 +26,15 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import customRect from '@/helpers/customRect'
+import customRect from '@/helpers/customRect/customRect';
 
 const canvasContainer = ref(null);
+const canvasTag = ref(null);
+
 const canvas = ref(undefined);
 const ctx = ref(undefined);
 
-const firstCustomRect = ref(undefined);
+const rectObjList = ref([]);
 
 function mountFunction() {
     canvas.value = document.getElementById("canvasEditor");
@@ -53,22 +55,46 @@ function mountFunction() {
 
         const styles = {
             bc: colors[i],
+            hbc: "#388",
             r: (i + 1) * 2
         }
 
-        new customRect(canvas.value, {
-            sizing,
-            styles
-        });
+        rectObjList.value.push(
+            new customRect(canvas.value, {
+                sizing, styles
+            })
+        );
     }
 }
 
-function createRoundRect(x, y, w, h, c, r = 0) {
-    ctx.value.beginPath();
-    ctx.value.roundRect(x, y, w, h, r);
-    ctx.value.strokeStyle = c;
-    ctx.value.lineWidth = 1;
-    ctx.value.stroke();
+function collisionRectWithPoint(rect, point) {
+    let res = false;
+
+    if (
+        point.x >= rect.x && point.x <= (rect.x + rect.w) &&
+        point.y >= rect.y && point.y <= (rect.y + rect.h)
+    ) {
+        res = true;
+    }
+
+    return res;
+}
+
+function mouseMoveHandler(ev) {
+    const rect = canvasTag.value.getBoundingClientRect(),
+        x = ev.clientX - rect.x,
+        y = ev.clientY - rect.y;
+
+
+    for (let rect of rectObjList.value) {
+        if (collisionRectWithPoint(rect.getSizing(), { x, y })) {
+            rect.setHoveredState();
+            canvasTag.value.style.cursor = "pointer";
+        } else if (rect.getIsHover()) {
+            rect.removeHoveredState();
+            canvasTag.value.style.cursor = "auto";
+        }
+    }
 }
 
 function mountCanvas() {
@@ -78,6 +104,8 @@ function mountCanvas() {
 
     canvasTag.setAttribute("width", editorWidth);
     canvasTag.setAttribute("height", editorHeight);
+
+    canvasContainer.value.addEventListener("mousemove", mouseMoveHandler)
 }
 
 onMounted(() => {
