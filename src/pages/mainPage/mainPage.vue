@@ -20,6 +20,10 @@
             <div class="mainPage__sideBlock__title">
                 Стили
             </div>
+
+            <div v-if="Object.values(selectedRectObj).length === 1" class="mainPage__sideBlock__content">
+                {{ Object.values(selectedRectObj)[0].getStyles() }}
+            </div>
         </div>
     </div>
 </template>
@@ -35,6 +39,7 @@ const canvas = ref(undefined);
 const ctx = ref(undefined);
 
 const rectObjList = ref([]);
+const selectedRectObj = ref({});
 
 function mountFunction() {
     canvas.value = document.getElementById("canvasEditor");
@@ -54,9 +59,9 @@ function mountFunction() {
         }
 
         const styles = {
-            bc: colors[i],
-            hbc: "#388",
-            r: (i + 1) * 2
+            borderColor: colors[i],
+            hoverBorderColor: "#388",
+            borderRadius: (i + 1) * 2
         }
 
         rectObjList.value.push(
@@ -97,6 +102,31 @@ function mouseMoveHandler(ev) {
     }
 }
 
+function clickHandler(ev) {
+    const rect = canvasTag.value.getBoundingClientRect(),
+        x = ev.clientX - rect.x,
+        y = ev.clientY - rect.y;
+
+    for (let rect of rectObjList.value) {
+        const isCtrlLikeKeyDown = ev.ctrlKey || ev.metaKey;
+
+        if (collisionRectWithPoint(rect.getSizing(), { x, y })) {
+            if (isCtrlLikeKeyDown && rect.getIsSelected()) {
+                rect.removeSelectedState(false);
+                delete selectedRectObj.value[rect.getId()];
+            } else {
+                rect.setSelectedState();
+                selectedRectObj.value[rect.getId()] = rect;
+            }
+        } else if (rect.getIsSelected()) {
+            if (!isCtrlLikeKeyDown) {
+                rect.removeSelectedState(false);
+                delete selectedRectObj.value[rect.getId()];
+            }
+        }
+    }
+}
+
 function mountCanvas() {
     const canvasTag = document.getElementById("canvasEditor");
     const editorWidth = canvasContainer.value.clientWidth;
@@ -106,11 +136,24 @@ function mountCanvas() {
     canvasTag.setAttribute("height", editorHeight);
 
     canvasContainer.value.addEventListener("mousemove", mouseMoveHandler)
+    canvasContainer.value.addEventListener("click", clickHandler)
 }
 
 onMounted(() => {
     mountCanvas();
     mountFunction();
+
+    // setTimeout(() => {
+    //     console.log("Here!!!");
+
+    //     for (let rect of rectObjList.value) {
+    //         rect.clearArea();
+    //     }
+    //     ctx.value.scale(1.2, 1.2);
+    //     for (let rect of rectObjList.value) {
+    //         rect.render();
+    //     }
+    // }, 4000)
 })
 </script>
 

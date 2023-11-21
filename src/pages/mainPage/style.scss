@@ -8,6 +8,8 @@
     &__sideBlock {
         
         &__title {
+            height: $ui-step * 15;
+
             padding: $ui-step * 3 0;
             
             border-bottom: 1px solid $primary-black;
@@ -29,7 +31,7 @@
         border-bottom: none;
 
         &__canvasContainer {
-            height: 100%;
+            height: calc(100% - #{$ui-step} * 15);
 
             #canvasEditor {
                 width: 100%;

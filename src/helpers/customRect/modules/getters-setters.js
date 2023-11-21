@@ -49,6 +49,13 @@ const StateGettersSetters = (template) => class extends template {
     setIsHover(value) {
         this.stateObj.hover = value;
     }
+
+    getIsSelected() {
+        return this.stateObj.selected;
+    }
+    setIsSelected(value) {
+        this.stateObj.selected = value;
+    }
 }
 
 class StylesGettersSetters {
@@ -59,26 +66,39 @@ class StylesGettersSetters {
         this.styles = value;
     }
 
-    getBC() {
-        return this.styles.bc;
+    getBorderColor() {
+        return this.styles.borderColor;
     }
-    setBC(value) {
-        this.styles.bc = value;
+    setBorderColor(value) {
+        this.styles.borderColor = value;
+    }
+    gethoverBorderColor() {
+        return this.styles.hoverBorderColor;
+    }
+    sethoverBorderColor(value) {
+        this.styles.hoverBorderColor = value;
     }
 
-    getR() {
-        return this.styles.r;
+    getBorderRadius() {
+        return this.styles.borderRadius;
     }
-    setR(value) {
-        this.styles.r = value;
+    setBorderRadius(value) {
+        this.styles.borderRadius = value;
     }
 
-    getLW() {
-        return this.styles.LW;
+    getLineWidth() {
+        return this.styles.lineWidth;
     }
-    setLW(value) {
-        this.styles.LW = value;
+    setLineWidth(value) {
+        this.styles.lineWidth = value;
+    }
+
+    getSelectedLineWidth() {
+        return this.styles.selectedLineWidth;
+    }
+    setSelectedLineWidth(value) {
+        this.styles.selectedLineWidth = value;
     }
 }
 
-export default class StylesSizingGettersSetters extends StateGettersSetters(SizingGettersSetters(StylesGettersSetters)) {}
+export default class GettersSetters extends StateGettersSetters(SizingGettersSetters(StylesGettersSetters)) {}
