@@ -49,19 +49,24 @@ function mountFunction() {
     const defaultWidth = 150;
     const defaultHeight = 100;
     const gap = 20;
+    const padding = {
+        x: 20,
+        y: 20,
+    };
 
     for (let i in colors) {
         const sizing = {
-            x: 20 + (defaultWidth + gap) * i,
-            y: 20,
+            x: padding.x + (defaultWidth + gap) * i,
+            y: padding.y,
             w: defaultWidth,
-            h: defaultHeight
+            h: defaultHeight,
         }
 
         const styles = {
             borderColor: colors[i],
             hoverBorderColor: "#388",
-            borderRadius: (i + 1) * 2
+            borderRadius: (i + 1) * 2,
+            lineWidth: 2,
         }
 
         rectObjList.value.push(
@@ -92,7 +97,7 @@ function mouseMoveHandler(ev) {
 
 
     for (let rect of rectObjList.value) {
-        if (collisionRectWithPoint(rect.getSizing(), { x, y })) {
+        if (collisionRectWithPoint(rect.getShowingSizing(), { x, y })) {
             rect.setHoveredState();
             canvasTag.value.style.cursor = "pointer";
         } else if (rect.getIsHover()) {
@@ -110,7 +115,7 @@ function clickHandler(ev) {
     for (let rect of rectObjList.value) {
         const isCtrlLikeKeyDown = ev.ctrlKey || ev.metaKey;
 
-        if (collisionRectWithPoint(rect.getSizing(), { x, y })) {
+        if (collisionRectWithPoint(rect.getShowingSizing(), { x, y })) {
             if (isCtrlLikeKeyDown && rect.getIsSelected()) {
                 rect.removeSelectedState(false);
                 delete selectedRectObj.value[rect.getId()];
@@ -128,32 +133,101 @@ function clickHandler(ev) {
 }
 
 function mountCanvas() {
-    const canvasTag = document.getElementById("canvasEditor");
+    canvasTag.value = document.getElementById("canvasEditor");
     const editorWidth = canvasContainer.value.clientWidth;
     const editorHeight = canvasContainer.value.clientHeight;
 
-    canvasTag.setAttribute("width", editorWidth);
-    canvasTag.setAttribute("height", editorHeight);
+    canvasTag.value.width = editorWidth;
+    canvasTag.value.height = editorHeight;
+
+    // cameraObj.value.cameraOffset = { x: canvasTag.value.clientWidth / 2, y: canvasTag.value.clientHeight / 2 };
 
     canvasContainer.value.addEventListener("mousemove", mouseMoveHandler)
     canvasContainer.value.addEventListener("click", clickHandler)
+
+    // canvasContainer.value.addEventListener('mousedown', onPointerDown);
+    // canvasContainer.value.addEventListener('mousemove', onPointerMove);
+    // canvasContainer.value.addEventListener('mouseup', onPointerUp);
+    canvasContainer.value.addEventListener('wheel', (e) => adjustZoom(e.deltaY * cameraObj.value.SCROLL_SENSITIVITY));
+}
+
+const cameraObj = ref({
+    cameraOffset: { x: 0, y: 0 },
+    cameraZoom: 1,
+    lastZoom: 1,
+    MAX_ZOOM: 5,
+    MIN_ZOOM: 0.1,
+    SCROLL_SENSITIVITY: 0.0005,
+})
+
+const dragObj = ref({
+    isDragging: false,
+    dragStart: { x: 0, y: 0 },
+})
+
+function getEventLocation(e) {
+    if (e.touches && e.touches.length == 1) {
+        return { x: e.touches[0].clientX, y: e.touches[0].clientY }
+    }
+    else if (e.clientX && e.clientY) {
+        return { x: e.clientX, y: e.clientY }
+    }
+}
+
+function onPointerDown(e) {
+    // dragObj.value.isDragging = true;
+
+    // dragObj.value.dragStart.x = getEventLocation(e).x / cameraObj.value.cameraZoom - cameraObj.value.cameraOffset.x;
+    // dragObj.value.dragStart.y = getEventLocation(e).y / cameraObj.value.cameraZoom - cameraObj.value.cameraOffset.y;
+}
+
+function onPointerMove(e) {
+    // if (dragObj.value.isDragging) {
+    //     cameraObj.value.cameraOffset.x = getEventLocation(e).x / cameraObj.value.cameraZoom - dragObj.value.dragStart.x;
+    //     cameraObj.value.cameraOffset.y = getEventLocation(e).y / cameraObj.value.cameraZoom - dragObj.value.dragStart.y;
+    // }
+}
+
+function onPointerUp(e) {
+    // dragObj.value.isDragging = false;
+    // initialPinchDistance = null
+    // cameraObj.value.lastZoom = cameraObj.value.cameraZoom;
+}
+
+function adjustZoom(zoomAmount) {
+    if (!dragObj.value.isDragging) {
+        if (zoomAmount) {
+            cameraObj.value.cameraZoom += zoomAmount;
+        }
+
+        cameraObj.value.cameraZoom = Math.min(cameraObj.value.cameraZoom, cameraObj.value.MAX_ZOOM);
+        cameraObj.value.cameraZoom = Math.max(cameraObj.value.cameraZoom, cameraObj.value.MIN_ZOOM);
+
+        for (let item of rectObjList.value) {
+            item.setX(item.getX() * cameraObj.value.cameraZoom);
+            item.setY(item.getY() * cameraObj.value.cameraZoom);
+            item.setW(item.getW() * cameraObj.value.cameraZoom);
+            item.setH(item.getH() * cameraObj.value.cameraZoom);
+
+            // item.setBorderRadius(item.getBorderRadius() * cameraObj.value.cameraZoom);
+            item.setLineWidth(item.getLineWidth() * cameraObj.value.cameraZoom);
+            item.setSelectedLineWidth(item.getSelectedLineWidth() * cameraObj.value.cameraZoom);
+        }
+
+        render();
+    }
+}
+
+function render() {
+    ctx.value.clearRect(0, 0, canvasTag.value.clientWidth, canvasTag.value.clientHeight);
+    for (let item of rectObjList.value) {
+        item.render();
+    }
 }
 
 onMounted(() => {
     mountCanvas();
     mountFunction();
-
-    // setTimeout(() => {
-    //     console.log("Here!!!");
-
-    //     for (let rect of rectObjList.value) {
-    //         rect.clearArea();
-    //     }
-    //     ctx.value.scale(1.2, 1.2);
-    //     for (let rect of rectObjList.value) {
-    //         rect.render();
-    //     }
-    // }, 4000)
 })
 </script>
 

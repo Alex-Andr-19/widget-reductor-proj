@@ -1,3 +1,4 @@
+import deepClone from "../deepClone";
 import GettersSetters from "./modules/getters-setters";
 
 export default class customRect extends GettersSetters {
@@ -6,24 +7,25 @@ export default class customRect extends GettersSetters {
         this.canvas = canvas;
         this.ctx = canvas.getContext("2d");
 
-        this.id = new Date().getTime() + Object.values(options.sizing).reduce((total, x) => total+= x, 0);
+        this.id = new Date().getTime() + Object.values(options.sizing).reduce((total, x) => total += x, 0);
 
         /*
             x, y, w, h
         */
-        this.sizing = options.sizing;
+        this.sizing = deepClone(options.sizing);
+        this.showingSizing = deepClone(options.sizing);
 
         /*
             borderColor, borderRadius, lineWidth, slectedLineWidth, selectedBorderColor
         */
-        this.styles = options.styles;
-        if (options.styles.lineWidth === undefined) {
-            this.styles.lineWidth = 1;
-        }
-        if (options.styles.selectedLineWidth === undefined) {
-            this.styles.selectedLineWidth = 3;
-            this.styles.selectedBorderColor = "#663";
-        }
+        this.styles = deepClone(options.styles);
+        this.showingStyles = deepClone(options.styles);
+
+        this.styles.lineWidth = options.styles.lineWidth ?? 1;
+
+        this.styles.selectedLineWidth = options.styles.selectedLineWidth ?? 3;
+
+        this.styles.selectedBorderColor = options.styles.selectedBorderColor ?? "#663";
 
         this.stateObj = {
             hover: false,
@@ -37,10 +39,10 @@ export default class customRect extends GettersSetters {
         this.clearArea();
 
         this.ctx.beginPath();
-        this.ctx.roundRect(this.sizing.x, this.sizing.y, this.sizing.w, this.sizing.h, this.styles.borderRadius);
+        this.ctx.roundRect(this.showingSizing.x, this.showingSizing.y, this.showingSizing.w, this.showingSizing.h, this.showingStyles.borderRadius);
         this.ctx.strokeStyle = this.stateObj.hover ? this.styles.hoverBorderColor :
             this.stateObj.selected ? this.styles.selectedBorderColor : this.styles.borderColor;
-        this.ctx.lineWidth = this.stateObj.selected ?  this.styles.selectedLineWidth : this.styles.lineWidth;
+        this.ctx.lineWidth = this.stateObj.selected ? this.showingStyles.selectedLineWidth : this.showingStyles.lineWidth;
         this.ctx.stroke();
     }
 
@@ -70,17 +72,17 @@ export default class customRect extends GettersSetters {
 
     clearArea() {
         const clearingArea = {
-            x: this.sizing.x - this.styles.lineWidth,
-            y: this.sizing.y - this.styles.lineWidth,
-            w: this.sizing.w + (this.styles.lineWidth * 2),
-            h: this.sizing.h + (this.styles.lineWidth * 2),
+            x: this.showingSizing.x - this.showingStyles.lineWidth - 3,
+            y: this.showingSizing.y - this.showingStyles.lineWidth - 3,
+            w: this.showingSizing.w + (this.showingStyles.lineWidth * 2) + 6,
+            h: this.showingSizing.h + (this.showingStyles.lineWidth * 2) + 6,
         }
 
         if (this.stateObj.selected) {
-            clearingArea.x = this.sizing.x - this.styles.selectedLineWidth;
-            clearingArea.y = this.sizing.y - this.styles.selectedLineWidth;
-            clearingArea.w = this.sizing.w + (this.styles.selectedLineWidth * 2);
-            clearingArea.h = this.sizing.h + (this.styles.selectedLineWidth * 2);
+            clearingArea.x = this.showingSizing.x - this.showingStyles.selectedLineWidth - 3;
+            clearingArea.y = this.showingSizing.y - this.showingStyles.selectedLineWidth - 3;
+            clearingArea.w = this.showingSizing.w + (this.showingStyles.selectedLineWidth * 2) + 6;
+            clearingArea.h = this.showingSizing.h + (this.showingStyles.selectedLineWidth * 2) + 6;
         }
 
         this.ctx.clearRect(...Object.values(clearingArea));

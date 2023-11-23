@@ -2,36 +2,51 @@ const SizingGettersSetters = (template) => class extends template {
     getSizing() {
         return this.sizing;
     }
+    getShowingSizing() {
+        return this.showingSizing;
+    }
     setSizing(value) {
-        this.sizing = value;
+        this.showingSizing = value;
     }
 
     getX() {
         return this.sizing.x;
     }
+    getShowingX() {
+        return this.showingSizing.x;
+    }
     setX(value) {
-        this.sizing.x = value;
+        this.showingSizing.x = value;
     }
     
     getY() {
         return this.sizing.y;
     }
+    getShowingY() {
+        return this.showingSizing.y;
+    }
     setY(value) {
-        this.sizing.y = value;
+        this.showingSizing.y = value;
     }
     
     getW() {
         return this.sizing.w;
     }
+    getShowingW() {
+        return this.showingSizing.w;
+    }
     setW(value) {
-        this.sizing.w = value;
+        this.showingSizing.w = value;
     }
     
     getH() {
         return this.sizing.h;
     }
+    getShowingH() {
+        return this.showingSizing.h;
+    }
     setH(value) {
-        this.sizing.h = value;
+        this.showingSizing.h = value;
     }
 }
 
@@ -62,8 +77,11 @@ class StylesGettersSetters {
     getStyles() {
         return this.styles;
     }
+    getShowingStyles() {
+        return this.showingStyles;
+    }
     setStyles(value) {
-        this.styles = value;
+        this.showingStyles = value;
     }
 
     getBorderColor() {
@@ -82,22 +100,31 @@ class StylesGettersSetters {
     getBorderRadius() {
         return this.styles.borderRadius;
     }
+    getShowingBorderRadius() {
+        return this.showingStyles.borderRadius;
+    }
     setBorderRadius(value) {
-        this.styles.borderRadius = value;
+        this.showingStyles.borderRadius = value;
     }
 
     getLineWidth() {
         return this.styles.lineWidth;
     }
+    getShowingLineWidth() {
+        return this.showingStyles.lineWidth;
+    }
     setLineWidth(value) {
-        this.styles.lineWidth = value;
+        this.showingStyles.lineWidth = value;
     }
 
     getSelectedLineWidth() {
         return this.styles.selectedLineWidth;
     }
+    getShowingSelectedLineWidth() {
+        return this.showingStyles.selectedLineWidth;
+    }
     setSelectedLineWidth(value) {
-        this.styles.selectedLineWidth = value;
+        this.showingStyles.selectedLineWidth = value;
     }
 }
 
