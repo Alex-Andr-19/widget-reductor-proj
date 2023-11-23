@@ -194,7 +194,10 @@ function onPointerUp(e) {
 }
 
 function adjustZoom(e) {
-    const zoomAmount = e.deltaY * cameraObj.value.SCROLL_SENSITIVITY;
+    let zoomAmount = e.deltaY * cameraObj.value.SCROLL_SENSITIVITY;
+    if (e.shiftKey) {
+        zoomAmount *= 10;
+    }
     if (!dragObj.value.isDragging) {
         if (zoomAmount) {
             cameraObj.value.cameraZoom += zoomAmount;
