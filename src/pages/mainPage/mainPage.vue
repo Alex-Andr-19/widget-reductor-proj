@@ -31,6 +31,7 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import customRect from '@/helpers/customRect/customRect';
+import deepClone from '@/helpers/deepClone';
 
 const canvasContainer = ref(null);
 const canvasTag = ref(null);
@@ -155,6 +156,7 @@ const cameraObj = ref({
     MAX_ZOOM: 5,
     MIN_ZOOM: 0.1,
     SCROLL_SENSITIVITY: 0.0005,
+    SPEED_DRAG_BY_SCROLL_TO_POINT: 0.3,
 })
 
 const dragObj = ref({
@@ -175,14 +177,14 @@ function getEventLocation(e) {
 function onPointerDown(e) {
     dragObj.value.isDragging = true;
 
-    dragObj.value.dragStart.x = getEventLocation(e).x / cameraObj.value.cameraZoom - cameraObj.value.cameraOffset.x;
-    dragObj.value.dragStart.y = getEventLocation(e).y / cameraObj.value.cameraZoom - cameraObj.value.cameraOffset.y;
+    dragObj.value.dragStart.x = -(getEventLocation(e).x / cameraObj.value.cameraZoom + cameraObj.value.cameraOffset.x);
+    dragObj.value.dragStart.y = -(getEventLocation(e).y / cameraObj.value.cameraZoom + cameraObj.value.cameraOffset.y);
 }
 
 function onPointerMove(e) {
     if (dragObj.value.isDragging) {
-        cameraObj.value.cameraOffset.x = getEventLocation(e).x / cameraObj.value.cameraZoom - dragObj.value.dragStart.x;
-        cameraObj.value.cameraOffset.y = getEventLocation(e).y / cameraObj.value.cameraZoom - dragObj.value.dragStart.y;
+        cameraObj.value.cameraOffset.x = -(getEventLocation(e).x / cameraObj.value.cameraZoom + dragObj.value.dragStart.x);
+        cameraObj.value.cameraOffset.y = -(getEventLocation(e).y / cameraObj.value.cameraZoom + dragObj.value.dragStart.y);
 
         render();
     }
@@ -193,14 +195,16 @@ function onPointerUp(e) {
 }
 
 function adjustZoom(e) {
-    let zoomAmount = e.deltaY * cameraObj.value.SCROLL_SENSITIVITY;
-    if (e.shiftKey) {
-        zoomAmount *= 10;
-    }
     if (!dragObj.value.isDragging) {
+        let zoomAmount = -e.deltaY * cameraObj.value.SCROLL_SENSITIVITY;
+        if (e.shiftKey) {
+            zoomAmount *= 10;
+        }
         if (zoomAmount) {
             cameraObj.value.cameraZoom += zoomAmount;
         }
+
+        // translateOnZoom(e);
 
         cameraObj.value.cameraZoom = Math.min(cameraObj.value.cameraZoom, cameraObj.value.MAX_ZOOM);
         cameraObj.value.cameraZoom = Math.max(cameraObj.value.cameraZoom, cameraObj.value.MIN_ZOOM);
@@ -218,11 +222,29 @@ function adjustZoom(e) {
     }
 }
 
+function translateOnZoom(e) {
+    const startCord = deepClone(cameraObj.value.cameraOffset);
+
+    const catetX = Math.abs(startCord.x - e.offsetX)
+    const catetY = Math.abs(startCord.y - e.offsetY)
+    const hypotenuse = Math.sqrt(
+        Math.pow(catetX, 2) + Math.pow(catetY, 2)
+    )
+
+    const cordsSteps = {
+        x: catetX * cameraObj.value.SPEED_DRAG_BY_SCROLL_TO_POINT / hypotenuse * -e.deltaY,
+        y: catetY * cameraObj.value.SPEED_DRAG_BY_SCROLL_TO_POINT / hypotenuse * -e.deltaY,
+    };
+
+    cameraObj.value.cameraOffset.x += cordsSteps.x;
+    cameraObj.value.cameraOffset.y += cordsSteps.y;
+}
+
 function render() {
     ctx.value.clearRect(0, 0, canvasTag.value.clientWidth, canvasTag.value.clientHeight);
     for (let item of rectObjList.value) {
-        item.setShowingX((item.getX() + cameraObj.value.cameraOffset.x) * cameraObj.value.cameraZoom);
-        item.setShowingY((item.getY() + cameraObj.value.cameraOffset.y) * cameraObj.value.cameraZoom);
+        item.setShowingX((item.getX() - cameraObj.value.cameraOffset.x) * cameraObj.value.cameraZoom);
+        item.setShowingY((item.getY() - cameraObj.value.cameraOffset.y) * cameraObj.value.cameraZoom);
         item.render();
     }
 }
