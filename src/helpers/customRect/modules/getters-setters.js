@@ -6,6 +6,9 @@ const SizingGettersSetters = (template) => class extends template {
         return this.showingSizing;
     }
     setSizing(value) {
+        this.sizing = value;
+    }
+    setShowingSizing(value) {
         this.showingSizing = value;
     }
 
@@ -16,6 +19,9 @@ const SizingGettersSetters = (template) => class extends template {
         return this.showingSizing.x;
     }
     setX(value) {
+        this.sizing.x = value;
+    }
+    setShowingX(value) {
         this.showingSizing.x = value;
     }
     
@@ -26,6 +32,9 @@ const SizingGettersSetters = (template) => class extends template {
         return this.showingSizing.y;
     }
     setY(value) {
+        this.sizing.y = value;
+    }
+    setShowingY(value) {
         this.showingSizing.y = value;
     }
     
@@ -36,6 +45,9 @@ const SizingGettersSetters = (template) => class extends template {
         return this.showingSizing.w;
     }
     setW(value) {
+        this.sizing.w = value;
+    }
+    setShowingW(value) {
         this.showingSizing.w = value;
     }
     
@@ -46,6 +58,9 @@ const SizingGettersSetters = (template) => class extends template {
         return this.showingSizing.h;
     }
     setH(value) {
+        this.sizing.h = value;
+    }
+    setShowingH(value) {
         this.showingSizing.h = value;
     }
 }

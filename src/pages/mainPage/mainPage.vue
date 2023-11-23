@@ -140,15 +140,13 @@ function mountCanvas() {
     canvasTag.value.width = editorWidth;
     canvasTag.value.height = editorHeight;
 
-    // cameraObj.value.cameraOffset = { x: canvasTag.value.clientWidth / 2, y: canvasTag.value.clientHeight / 2 };
-
     canvasContainer.value.addEventListener("mousemove", mouseMoveHandler)
     canvasContainer.value.addEventListener("click", clickHandler)
 
-    // canvasContainer.value.addEventListener('mousedown', onPointerDown);
-    // canvasContainer.value.addEventListener('mousemove', onPointerMove);
-    // canvasContainer.value.addEventListener('mouseup', onPointerUp);
-    canvasContainer.value.addEventListener('wheel', (e) => adjustZoom(e.deltaY * cameraObj.value.SCROLL_SENSITIVITY));
+    canvasContainer.value.addEventListener('mousedown', onPointerDown);
+    canvasContainer.value.addEventListener('mousemove', onPointerMove);
+    canvasContainer.value.addEventListener('mouseup', onPointerUp);
+    canvasContainer.value.addEventListener('wheel', adjustZoom);
 }
 
 const cameraObj = ref({
@@ -163,6 +161,7 @@ const cameraObj = ref({
 const dragObj = ref({
     isDragging: false,
     dragStart: { x: 0, y: 0 },
+    DRAG_SENSITIVITY: 0.05,
 })
 
 function getEventLocation(e) {
@@ -175,26 +174,27 @@ function getEventLocation(e) {
 }
 
 function onPointerDown(e) {
-    // dragObj.value.isDragging = true;
+    dragObj.value.isDragging = true;
 
-    // dragObj.value.dragStart.x = getEventLocation(e).x / cameraObj.value.cameraZoom - cameraObj.value.cameraOffset.x;
-    // dragObj.value.dragStart.y = getEventLocation(e).y / cameraObj.value.cameraZoom - cameraObj.value.cameraOffset.y;
+    dragObj.value.dragStart.x = getEventLocation(e).x / cameraObj.value.cameraZoom - cameraObj.value.cameraOffset.x;
+    dragObj.value.dragStart.y = getEventLocation(e).y / cameraObj.value.cameraZoom - cameraObj.value.cameraOffset.y;
 }
 
 function onPointerMove(e) {
-    // if (dragObj.value.isDragging) {
-    //     cameraObj.value.cameraOffset.x = getEventLocation(e).x / cameraObj.value.cameraZoom - dragObj.value.dragStart.x;
-    //     cameraObj.value.cameraOffset.y = getEventLocation(e).y / cameraObj.value.cameraZoom - dragObj.value.dragStart.y;
-    // }
+    if (dragObj.value.isDragging) {
+        cameraObj.value.cameraOffset.x = getEventLocation(e).x / cameraObj.value.cameraZoom - dragObj.value.dragStart.x;
+        cameraObj.value.cameraOffset.y = getEventLocation(e).y / cameraObj.value.cameraZoom - dragObj.value.dragStart.y;
+
+        render();
+    }
 }
 
 function onPointerUp(e) {
-    // dragObj.value.isDragging = false;
-    // initialPinchDistance = null
-    // cameraObj.value.lastZoom = cameraObj.value.cameraZoom;
+    dragObj.value.isDragging = false;
 }
 
-function adjustZoom(zoomAmount) {
+function adjustZoom(e) {
+    const zoomAmount = e.deltaY * cameraObj.value.SCROLL_SENSITIVITY;
     if (!dragObj.value.isDragging) {
         if (zoomAmount) {
             cameraObj.value.cameraZoom += zoomAmount;
@@ -204,12 +204,10 @@ function adjustZoom(zoomAmount) {
         cameraObj.value.cameraZoom = Math.max(cameraObj.value.cameraZoom, cameraObj.value.MIN_ZOOM);
 
         for (let item of rectObjList.value) {
-            item.setX(item.getX() * cameraObj.value.cameraZoom);
-            item.setY(item.getY() * cameraObj.value.cameraZoom);
-            item.setW(item.getW() * cameraObj.value.cameraZoom);
-            item.setH(item.getH() * cameraObj.value.cameraZoom);
+            item.setShowingW(item.getW() * cameraObj.value.cameraZoom);
+            item.setShowingH(item.getH() * cameraObj.value.cameraZoom);
 
-            // item.setBorderRadius(item.getBorderRadius() * cameraObj.value.cameraZoom);
+            item.setBorderRadius(item.getBorderRadius() * cameraObj.value.cameraZoom);
             item.setLineWidth(item.getLineWidth() * cameraObj.value.cameraZoom);
             item.setSelectedLineWidth(item.getSelectedLineWidth() * cameraObj.value.cameraZoom);
         }
@@ -221,6 +219,8 @@ function adjustZoom(zoomAmount) {
 function render() {
     ctx.value.clearRect(0, 0, canvasTag.value.clientWidth, canvasTag.value.clientHeight);
     for (let item of rectObjList.value) {
+        item.setShowingX((item.getX() + cameraObj.value.cameraOffset.x) * cameraObj.value.cameraZoom);
+        item.setShowingY((item.getY() + cameraObj.value.cameraOffset.y) * cameraObj.value.cameraZoom);
         item.render();
     }
 }
