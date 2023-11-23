@@ -41,7 +41,7 @@ const ctx = ref(undefined);
 const rectObjList = ref([]);
 const selectedRectObj = ref({});
 
-function mountFunction() {
+function createRectsObjList() {
     canvas.value = document.getElementById("canvasEditor");
     ctx.value = canvas.value.getContext("2d");
 
@@ -152,7 +152,6 @@ function mountCanvas() {
 const cameraObj = ref({
     cameraOffset: { x: 0, y: 0 },
     cameraZoom: 1,
-    lastZoom: 1,
     MAX_ZOOM: 5,
     MIN_ZOOM: 0.1,
     SCROLL_SENSITIVITY: 0.0005,
@@ -230,7 +229,7 @@ function render() {
 
 onMounted(() => {
     mountCanvas();
-    mountFunction();
+    createRectsObjList();
 })
 </script>
 
