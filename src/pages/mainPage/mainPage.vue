@@ -11,8 +11,17 @@
                 Редактор
             </div>
 
-            <div ref="canvasContainer" class="mainPage__mainBlock__canvasContainer">
-                <canvas ref="canvasTag" id="canvasEditor"></canvas>
+            <div @click="createRandomRect" class="mainPage__mainBlock__canvas">
+                <v-stage
+                    v-if="configKonva !== undefined"
+                    :config="configKonva"
+                    
+                    ref="stageRef"
+                >
+                    <v-layer>
+                        <v-rect v-for="rect in rectList" :config="rect"></v-rect>
+                    </v-layer>
+                </v-stage>
             </div>
         </div>
 
@@ -20,239 +29,66 @@
             <div class="mainPage__sideBlock__title">
                 Стили
             </div>
-
-            <div v-if="Object.values(selectedRectObj).length === 1" class="mainPage__sideBlock__content">
-                {{ Object.values(selectedRectObj)[0].getStyles() }}
-            </div>
         </div>
     </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from "vue";
-import customRect from '@/helpers/customRect/customRect';
-import deepClone from '@/helpers/deepClone';
 
-const canvasContainer = ref(null);
-const canvasTag = ref(null);
+const configKonva = ref(undefined);
+const configCircle = ref(undefined);
 
-const canvas = ref(undefined);
-const ctx = ref(undefined);
+const stageRef = ref(null);
+const stage = ref(undefined);
 
-const rectObjList = ref([]);
-const selectedRectObj = ref({});
-
-function createRectsObjList() {
-    canvas.value = document.getElementById("canvasEditor");
-    ctx.value = canvas.value.getContext("2d");
-
-    const colors = ["#000", "#F00", "#0F0", "#00F"];
-    const defaultWidth = 150;
-    const defaultHeight = 100;
-    const gap = 20;
-    const padding = {
-        x: 20,
-        y: 20,
-    };
-
-    for (let i in colors) {
-        const sizing = {
-            x: padding.x + (defaultWidth + gap) * i,
-            y: padding.y,
-            w: defaultWidth,
-            h: defaultHeight,
-        }
-
-        const styles = {
-            borderColor: colors[i],
-            hoverBorderColor: "#388",
-            borderRadius: (i + 1) * 2,
-            lineWidth: 2,
-        }
-
-        rectObjList.value.push(
-            new customRect(canvas.value, {
-                sizing, styles
-            })
-        );
-    }
-}
-
-function collisionRectWithPoint(rect, point) {
-    let res = false;
-
-    if (
-        point.x >= rect.x && point.x <= (rect.x + rect.w) &&
-        point.y >= rect.y && point.y <= (rect.y + rect.h)
-    ) {
-        res = true;
-    }
-
-    return res;
-}
-
-function mouseMoveHandler(ev) {
-    const rect = canvasTag.value.getBoundingClientRect(),
-        x = ev.clientX - rect.x,
-        y = ev.clientY - rect.y;
-
-
-    for (let rect of rectObjList.value) {
-        if (collisionRectWithPoint(rect.getShowingSizing(), { x, y })) {
-            rect.setHoveredState();
-            canvasTag.value.style.cursor = "pointer";
-        } else if (rect.getIsHover()) {
-            rect.removeHoveredState();
-            canvasTag.value.style.cursor = "auto";
-        }
-    }
-}
-
-function clickHandler(ev) {
-    const rect = canvasTag.value.getBoundingClientRect(),
-        x = ev.clientX - rect.x,
-        y = ev.clientY - rect.y;
-
-    for (let rect of rectObjList.value) {
-        const isCtrlLikeKeyDown = ev.ctrlKey || ev.metaKey;
-
-        if (collisionRectWithPoint(rect.getShowingSizing(), { x, y })) {
-            if (isCtrlLikeKeyDown && rect.getIsSelected()) {
-                rect.removeSelectedState(false);
-                delete selectedRectObj.value[rect.getId()];
-            } else {
-                rect.setSelectedState();
-                selectedRectObj.value[rect.getId()] = rect;
-            }
-        } else if (rect.getIsSelected()) {
-            if (!isCtrlLikeKeyDown) {
-                rect.removeSelectedState(false);
-                delete selectedRectObj.value[rect.getId()];
-            }
-        }
-    }
-}
-
-function mountCanvas() {
-    canvasTag.value = document.getElementById("canvasEditor");
-    const editorWidth = canvasContainer.value.clientWidth;
-    const editorHeight = canvasContainer.value.clientHeight;
-
-    canvasTag.value.width = editorWidth;
-    canvasTag.value.height = editorHeight;
-
-    canvasContainer.value.addEventListener("mousemove", mouseMoveHandler)
-    canvasContainer.value.addEventListener("click", clickHandler)
-
-    canvasContainer.value.addEventListener('mousedown', onPointerDown);
-    canvasContainer.value.addEventListener('mousemove', onPointerMove);
-    canvasContainer.value.addEventListener('mouseup', onPointerUp);
-    canvasContainer.value.addEventListener('wheel', adjustZoom);
-}
+const rectList = ref([]);
 
 const cameraObj = ref({
-    cameraOffset: { x: 0, y: 0 },
-    cameraZoom: 1,
-    MAX_ZOOM: 5,
-    MIN_ZOOM: 0.1,
-    SCROLL_SENSITIVITY: 0.0005,
-    SPEED_DRAG_BY_SCROLL_TO_POINT: 0.3,
+    zoom: 1,
+    ZOOM_SENSITIVITY: 0.0005,
+    centerDelta: {
+        x: 0,
+        y: 0,
+    },
+});
+
+const coordinatesObj = ref({
+    centerDelta: {
+        x: 0,
+        y: 0,
+    },
 })
 
-const dragObj = ref({
-    isDragging: false,
-    dragStart: { x: 0, y: 0 },
-    DRAG_SENSITIVITY: 0.05,
-})
-
-function getEventLocation(e) {
-    if (e.touches && e.touches.length == 1) {
-        return { x: e.touches[0].clientX, y: e.touches[0].clientY }
-    }
-    else if (e.clientX && e.clientY) {
-        return { x: e.clientX, y: e.clientY }
-    }
-}
-
-function onPointerDown(e) {
-    dragObj.value.isDragging = true;
-
-    dragObj.value.dragStart.x = -(getEventLocation(e).x / cameraObj.value.cameraZoom + cameraObj.value.cameraOffset.x);
-    dragObj.value.dragStart.y = -(getEventLocation(e).y / cameraObj.value.cameraZoom + cameraObj.value.cameraOffset.y);
-}
-
-function onPointerMove(e) {
-    if (dragObj.value.isDragging) {
-        cameraObj.value.cameraOffset.x = -(getEventLocation(e).x / cameraObj.value.cameraZoom + dragObj.value.dragStart.x);
-        cameraObj.value.cameraOffset.y = -(getEventLocation(e).y / cameraObj.value.cameraZoom + dragObj.value.dragStart.y);
-
-        render();
-    }
-}
-
-function onPointerUp(e) {
-    dragObj.value.isDragging = false;
-}
-
-function adjustZoom(e) {
-    if (!dragObj.value.isDragging) {
-        let zoomAmount = -e.deltaY * cameraObj.value.SCROLL_SENSITIVITY;
-        if (e.shiftKey) {
-            zoomAmount *= 10;
-        }
-        if (zoomAmount) {
-            cameraObj.value.cameraZoom += zoomAmount;
-        }
-
-        // translateOnZoom(e);
-
-        cameraObj.value.cameraZoom = Math.min(cameraObj.value.cameraZoom, cameraObj.value.MAX_ZOOM);
-        cameraObj.value.cameraZoom = Math.max(cameraObj.value.cameraZoom, cameraObj.value.MIN_ZOOM);
-
-        for (let item of rectObjList.value) {
-            item.setShowingW(item.getW() * cameraObj.value.cameraZoom);
-            item.setShowingH(item.getH() * cameraObj.value.cameraZoom);
-
-            item.setBorderRadius(item.getBorderRadius() * cameraObj.value.cameraZoom);
-            item.setLineWidth(item.getLineWidth() * cameraObj.value.cameraZoom);
-            item.setSelectedLineWidth(item.getSelectedLineWidth() * cameraObj.value.cameraZoom);
-        }
-
-        render();
-    }
-}
-
-function translateOnZoom(e) {
-    const startCord = deepClone(cameraObj.value.cameraOffset);
-
-    const catetX = Math.abs(startCord.x - e.offsetX)
-    const catetY = Math.abs(startCord.y - e.offsetY)
-    const hypotenuse = Math.sqrt(
-        Math.pow(catetX, 2) + Math.pow(catetY, 2)
-    )
-
-    const cordsSteps = {
-        x: catetX * cameraObj.value.SPEED_DRAG_BY_SCROLL_TO_POINT / hypotenuse * -e.deltaY,
-        y: catetY * cameraObj.value.SPEED_DRAG_BY_SCROLL_TO_POINT / hypotenuse * -e.deltaY,
-    };
-
-    cameraObj.value.cameraOffset.x += cordsSteps.x;
-    cameraObj.value.cameraOffset.y += cordsSteps.y;
-}
-
-function render() {
-    ctx.value.clearRect(0, 0, canvasTag.value.clientWidth, canvasTag.value.clientHeight);
-    for (let item of rectObjList.value) {
-        item.setShowingX((item.getX() - cameraObj.value.cameraOffset.x) * cameraObj.value.cameraZoom);
-        item.setShowingY((item.getY() - cameraObj.value.cameraOffset.y) * cameraObj.value.cameraZoom);
-        item.render();
-    }
+function createRandomRect() {
+    rectList.value.push({
+        x: Math.round(Math.random() * coordinatesObj.value.centerDelta.x * 2),
+        y: Math.round(Math.random() * coordinatesObj.value.centerDelta.y * 2),
+        width: Math.round(Math.random() * 50 + 50),
+        height: Math.round(Math.random() * 50 + 50),
+        fill: 'green',
+        stroke: 'black',
+        strokeWidth: 2,
+    })
 }
 
 onMounted(() => {
-    mountCanvas();
-    createRectsObjList();
+    configKonva.value = {
+        width: document.querySelector(".mainPage__mainBlock__canvas").clientWidth,
+        height: document.querySelector(".mainPage__mainBlock__canvas").clientHeight,
+    }
+
+    coordinatesObj.value.centerDelta.x = Math.round(configKonva.value.width / 2);
+    coordinatesObj.value.centerDelta.y = Math.round(configKonva.value.height / 2);
+
+    createRandomRect();
+
+    setTimeout(() => {
+        stage.value = stageRef.value.getStage();
+    }, 1000);
 })
+
+console.log("Created");
 </script>
 
 <style scoped lang="scss" src="./style.scss"></style>
