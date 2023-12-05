@@ -11,7 +11,7 @@ const stage = ref(undefined);
 
 const cameraObj = ref({
     zoom: 1,
-    ZOOM_SENSITIVITY: 0.0005,
+    ZOOM_SENSITIVITY: 1.031,
     centerDelta: {
         x: 0,
         y: 0,
@@ -34,14 +34,42 @@ function createRandomRect(e) {
         width: Math.round(Math.random() * 50 + 50),
         height: Math.round(Math.random() * 50 + 50),
         fill: 'green',
-        stroke: 'black',
-        strokeWidth: 2,
+        // stroke: 'black',
+        // strokeWidth: 2,
         draggable: true,
     });
 }
 
-function addRectToFirstLayer(e = {evt: { offsetX: 0, offsetY: 0 }}) {
+function addRectToFirstLayer(e = { evt: { offsetX: 0, offsetY: 0 } }) {
     stage.value.children[0].add(createRandomRect(e.evt));
+}
+
+function scaleHandler(e) {
+    e.evt.preventDefault();
+
+    const oldScale = stage.value.scaleX();
+    const pointer = stage.value.getPointerPosition();
+
+    const mousePointTo = {
+        x: (pointer.x - stage.value.x()) / oldScale,
+        y: (pointer.y - stage.value.y()) / oldScale,
+    };
+
+    let direction = e.evt.deltaY > 0 ? 1 : -1;
+
+    if (e.evt.metaKey) {
+        direction = -direction;
+    }
+
+    var newScale = direction > 0 ? oldScale * cameraObj.value.ZOOM_SENSITIVITY : oldScale / cameraObj.value.ZOOM_SENSITIVITY;
+
+    stage.value.scale({ x: newScale, y: newScale });
+
+    var newPos = {
+        x: pointer.x - mousePointTo.x * newScale,
+        y: pointer.y - mousePointTo.y * newScale,
+    };
+    stage.value.position(newPos);
 }
 
 function initStage() {
@@ -52,7 +80,7 @@ function initStage() {
         draggable: true,
     })
 
-    // stage.value.on("click", addRectToFirstLayer);
+    stage.value.on("wheel", scaleHandler);
 }
 
 function createLayer() {
@@ -68,11 +96,6 @@ onMounted(() => {
     coordinatesObj.value.centerDelta.y = Math.round(stage.value.attrs.height / 2);
 
     for (let i = 0; i < 10; i++) addRectToFirstLayer();
-
-    // for (let el of stage.value.children[0].children) {
-    //     console.log(el.getAbsolutePosition());
-    // }
-    console.log(stage.value.getTransform());
 })
 
 console.log("Created");
