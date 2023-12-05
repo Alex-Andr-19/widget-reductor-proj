@@ -27,10 +27,10 @@ const coordinatesObj = ref({
 
 function createRandomRect(e) {
     return new Konva.Rect({
-        x: e.offsetX,
-        y: e.offsetY,
-        // x: Math.round(Math.random() * coordinatesObj.value.centerDelta.x * 2),
-        // y: Math.round(Math.random() * coordinatesObj.value.centerDelta.y * 2),
+        // x: e.offsetX,
+        // y: e.offsetY,
+        x: Math.round(Math.random() * coordinatesObj.value.centerDelta.x * 2),
+        y: Math.round(Math.random() * coordinatesObj.value.centerDelta.y * 2),
         width: Math.round(Math.random() * 50 + 50),
         height: Math.round(Math.random() * 50 + 50),
         fill: 'green',
@@ -49,9 +49,10 @@ function initStage() {
         container: "canvasContainer",
         width: document.querySelector(".mainPage__mainBlock__canvas").clientWidth,
         height: document.querySelector(".mainPage__mainBlock__canvas").clientHeight,
+        draggable: true,
     })
 
-    stage.value.on("click", addRectToFirstLayer)
+    // stage.value.on("click", addRectToFirstLayer);
 }
 
 function createLayer() {
@@ -66,7 +67,12 @@ onMounted(() => {
     coordinatesObj.value.centerDelta.x = Math.round(stage.value.attrs.width / 2);
     coordinatesObj.value.centerDelta.y = Math.round(stage.value.attrs.height / 2);
 
-    addRectToFirstLayer();
+    for (let i = 0; i < 10; i++) addRectToFirstLayer();
+
+    // for (let el of stage.value.children[0].children) {
+    //     console.log(el.getAbsolutePosition());
+    // }
+    console.log(stage.value.getTransform());
 })
 
 console.log("Created");
