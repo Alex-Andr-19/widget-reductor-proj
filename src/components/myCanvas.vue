@@ -34,8 +34,8 @@ function createRandomRect(e) {
         width: Math.round(Math.random() * 50 + 50),
         height: Math.round(Math.random() * 50 + 50),
         fill: 'green',
-        // stroke: 'black',
-        // strokeWidth: 2,
+        stroke: 'black',
+        strokeWidth: 1,
         draggable: true,
     });
 }
@@ -55,7 +55,7 @@ function scaleHandler(e) {
         y: (pointer.y - stage.value.y()) / oldScale,
     };
 
-    let direction = e.evt.deltaY > 0 ? 1 : -1;
+    let direction = e.evt.deltaY > 0 ? -1 : 1;
 
     if (e.evt.metaKey) {
         direction = -direction;
