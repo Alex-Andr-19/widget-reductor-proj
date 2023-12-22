@@ -9,13 +9,10 @@ import Konva from "konva";
 
 const stage = ref(undefined);
 
+const selectedRects = ref([]);
+
 const cameraObj = ref({
-    zoom: 1,
     ZOOM_SENSITIVITY: 1.031,
-    centerDelta: {
-        x: 0,
-        y: 0,
-    },
 });
 
 const coordinatesObj = ref({
@@ -27,8 +24,6 @@ const coordinatesObj = ref({
 
 function createRandomRect(e) {
     return new Konva.Rect({
-        // x: e.offsetX,
-        // y: e.offsetY,
         x: Math.round(Math.random() * coordinatesObj.value.centerDelta.x * 2),
         y: Math.round(Math.random() * coordinatesObj.value.centerDelta.y * 2),
         width: Math.round(Math.random() * 50 + 50),
@@ -41,7 +36,10 @@ function createRandomRect(e) {
 }
 
 function addRectToFirstLayer(e = { evt: { offsetX: 0, offsetY: 0 } }) {
-    stage.value.children[0].add(createRandomRect(e.evt));
+    const rect = createRandomRect(e.evt);
+    addDragstartHandler(rect);
+    addClickHandler(rect);
+    stage.value.children[0].add(rect);
 }
 
 function scaleHandler(e) {
@@ -81,11 +79,49 @@ function initStage() {
     })
 
     stage.value.on("wheel", scaleHandler);
+
+    stage.value.on("click", function () {
+        for (let i in selectedRects.value) {
+            selectedRects.value[i].strokeWidth(1);
+            selectedRects.value[i].stroke("black");
+        }
+        selectedRects.value = [];
+    })
 }
 
 function createLayer() {
     const layer = new Konva.Layer();
+
     stage.value.add(layer);
+}
+
+function addDragstartHandler(rect) {
+    rect.on("dragstart", function (evt) {
+        const target = evt.target;
+        stage.value.children[0].children = [...stage.value.children[0].children.filter(el => el._id !== rect._id), target];
+    });
+}
+
+function addClickHandler(rect) {
+    rect.on("click", function (evt) {
+        evt.cancelBubble = true;
+        const target = evt.target;
+        if (selectedRects.value.length > 0 && !(evt.evt.ctrlKey || evt.evt.metaKey)) {
+            for (let i in selectedRects.value) {
+                selectedRects.value[i].strokeWidth(1);
+                selectedRects.value[i].stroke("black");
+            }
+        }
+
+        if (evt.evt.ctrlKey || evt.evt.metaKey) {
+            selectedRects.value.push(target);
+        } else {
+            selectedRects.value = [target];
+        }
+        
+        this.strokeWidth(3);
+        this.stroke("purple");
+    });
 }
 
 onMounted(() => {
