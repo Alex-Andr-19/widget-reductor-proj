@@ -22,7 +22,7 @@ const coordinatesObj = ref({
     },
 })
 
-function createRandomRect(e) {
+function createRandomRect() {
     return new Konva.Rect({
         x: Math.round(Math.random() * coordinatesObj.value.centerDelta.x * 2),
         y: Math.round(Math.random() * coordinatesObj.value.centerDelta.y * 2),
@@ -35,8 +35,8 @@ function createRandomRect(e) {
     });
 }
 
-function addRectToFirstLayer(e = { evt: { offsetX: 0, offsetY: 0 } }) {
-    const rect = createRandomRect(e.evt);
+function addRectToFirstLayer() {
+    const rect = createRandomRect();
     addDragstartHandler(rect);
     addClickHandler(rect);
     stage.value.children[0].add(rect);
