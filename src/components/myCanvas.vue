@@ -23,16 +23,27 @@ const coordinatesObj = ref({
 })
 
 function createRandomRect() {
-    return new Konva.Rect({
-        x: Math.round(Math.random() * coordinatesObj.value.centerDelta.x * 2),
-        y: Math.round(Math.random() * coordinatesObj.value.centerDelta.y * 2),
+    const sizing = {
         width: Math.round(Math.random() * 50 + 50),
         height: Math.round(Math.random() * 50 + 50),
+    };
+
+    const group = new Konva.Group({
+        x: Math.round(Math.random() * coordinatesObj.value.centerDelta.x * 2),
+        y: Math.round(Math.random() * coordinatesObj.value.centerDelta.y * 2),
+        ...sizing,
+    })
+
+    group.add(new Konva.Rect({
+        x: 0,
+        y: 0,
+        ...sizing,
         fill: 'green',
         stroke: 'black',
         strokeWidth: 1,
-        // draggable: true,
-    });
+    }))
+
+    return group;
 }
 
 function addRectToFirstLayer() {
@@ -67,7 +78,52 @@ function scaleHandler(e) {
         x: pointer.x - mousePointTo.x * newScale,
         y: pointer.y - mousePointTo.y * newScale,
     };
+
+    scaleSizingGroups();
+
     stage.value.position(newPos);
+}
+
+function scaleSizingGroups() {
+    const toolRectSizing = {
+        width: 7 / stage.value.scaleX(),
+        height: 7 / stage.value.scaleX(),
+    }
+    for (let i in selectedRects.value) {
+        selectedRects.value[i].children[0].strokeWidth(3 / stage.value.scaleX());
+
+        selectedRects.value[i].children[1].x(0);
+        selectedRects.value[i].children[1].y(0);
+        selectedRects.value[i].children[1].width(selectedRects.value[i].attrs.width);
+        selectedRects.value[i].children[1].height(selectedRects.value[i].attrs.height);
+
+        const toolRectPositions = [
+            {
+                x: -toolRectSizing.width / 2,
+                y: -toolRectSizing.height / 2,
+            },
+            {
+                x: selectedRects.value[i].attrs.width - toolRectSizing.width / 2,
+                y: -toolRectSizing.height / 2,
+            },
+            {
+                x: selectedRects.value[i].attrs.width - toolRectSizing.width / 2,
+                y: selectedRects.value[i].attrs.height - toolRectSizing.height / 2,
+            },
+            {
+                x: -toolRectSizing.width / 2,
+                y: selectedRects.value[i].attrs.height - toolRectSizing.height / 2,
+            },
+        ];
+
+        for (let j in selectedRects.value[i].children[1].children) {
+            selectedRects.value[i].children[1].children[j].x(toolRectPositions[j].x);
+            selectedRects.value[i].children[1].children[j].y(toolRectPositions[j].y);
+            selectedRects.value[i].children[1].children[j].width(toolRectSizing.width);
+            selectedRects.value[i].children[1].children[j].height(toolRectSizing.height);
+            selectedRects.value[i].children[1].children[j].strokeWidth(1 / stage.value.scaleX());
+        }
+    }
 }
 
 function initStage() {
@@ -82,9 +138,8 @@ function initStage() {
 
     stage.value.on("click", function () {
         for (let i in selectedRects.value) {
-            selectedRects.value[i].strokeWidth(1);
-            selectedRects.value[i].stroke("black");
-            selectedRects.value[i].draggable(false);
+            // const _rect = selectedRects.value[i].children[0];
+            disableGroupSelect(selectedRects.value[i]);
         }
         selectedRects.value = [];
     })
@@ -96,41 +151,109 @@ function createLayer() {
     stage.value.add(layer);
 }
 
-function addDragstartHandler(rect) {
-    rect.on("dragstart", function (evt) {
+function addDragstartHandler(group) {
+    group.on("dragstart", function (evt) {
         const target = evt.target;
-        stage.value.children[0].children = [...stage.value.children[0].children.filter(el => el._id !== rect._id), target];
+        stage.value.children[0].children = [...stage.value.children[0].children.filter(el => el._id !== group._id), target];
     });
 }
 
-function addClickHandler(rect) {
+function addClickHandler(group) {
+    const rect = group.children[group.children.length - 1];
     rect.on("click", function (evt) {
+        const _group = group;
+
         evt.cancelBubble = true;
 
         if (evt.evt.ctrlKey || evt.evt.metaKey) {
-            if (selectedRects.value.map(el => el._id).includes(this._id)) {
-                this.strokeWidth(1);
-                this.stroke("black");
-                this.draggable(false);
-                selectedRects.value = selectedRects.value.filter(el => el._id !== this._id)
+            if (selectedRects.value.map(el => el._id).includes(_group._id)) {
+                disableGroupSelect(_group);
+                selectedRects.value = selectedRects.value.filter(el => el._id !== this._id);
             } else {
-                selectedRects.value.push(this);
+                selectedRects.value.push(_group);
             }
         } else {
             for (let i in selectedRects.value) {
-                selectedRects.value[i].strokeWidth(1);
-                selectedRects.value[i].stroke("black");
-                selectedRects.value[i].draggable(false);
+                disableGroupSelect(selectedRects.value[i]);
             }
-            selectedRects.value = [this];
+            selectedRects.value = [_group];
         }
 
-        if (selectedRects.value.map(el => el._id).includes(this._id)) {
-            this.strokeWidth(3);
-            this.stroke("purple");
-            this.draggable(true);
+        if (selectedRects.value.map(el => el._id).includes(_group._id)) {
+            setGroupSelected(_group);
         }
     });
+}
+
+function disableGroupSelect(group) {
+    const rect = group.children[0];
+    group.children = [rect];
+    rect.strokeWidth(1);
+    rect.stroke("black");
+    group.draggable(false);
+}
+
+function setGroupSelected(group) {
+    const resizeToolGroup = new Konva.Group({
+        x: 0,
+        y: 0,
+        width: group.attrs.width,
+        height: group.attrs.height,
+    })
+
+    const toolRectSizing = {
+        width: 7 / stage.value.scaleX(),
+        height: 7 / stage.value.scaleX(),
+    }
+    const toolRectPositions = [
+        {
+            x: -toolRectSizing.width / 2,
+            y: -toolRectSizing.height / 2,
+        },
+        {
+            x: group.attrs.width - toolRectSizing.width / 2,
+            y: -toolRectSizing.height / 2,
+        },
+        {
+            x: group.attrs.width - toolRectSizing.width / 2,
+            y: group.attrs.height - toolRectSizing.height / 2,
+        },
+        {
+            x: -toolRectSizing.width / 2,
+            y: group.attrs.height - toolRectSizing.height / 2,
+        },
+    ];
+
+    for (let i in toolRectPositions) {
+        const toolRect = new Konva.Rect({
+            ...toolRectPositions[i],
+            ...toolRectSizing,
+            fill: "white",
+            stroke: "black",
+            strokeWidth: 1 / stage.value.scaleX(),
+        })
+
+        toolRect.on("mouseover", function () {
+            if (i % 2 === 0) {
+                document.getElementById("canvasContainer").style.cursor = "nwse-resize";
+            } else {
+                document.getElementById("canvasContainer").style.cursor = "nesw-resize";
+            }
+        })
+        toolRect.on("mouseleave", function () {
+            document.getElementById("canvasContainer").style.cursor = "auto"
+        })
+
+        resizeToolGroup.add(toolRect);
+    }
+    group.add(resizeToolGroup);
+    // console.log(stage.value.scaleX());
+
+    const rect = group.children[0];
+    rect.strokeWidth(3 / stage.value.scaleX());
+    // rect.strokeWidth(3);
+    rect.stroke("purple");
+    group.draggable(true);
 }
 
 onMounted(() => {
