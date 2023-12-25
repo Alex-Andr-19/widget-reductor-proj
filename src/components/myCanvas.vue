@@ -31,7 +31,7 @@ function createRandomRect() {
         fill: 'green',
         stroke: 'black',
         strokeWidth: 1,
-        draggable: true,
+        // draggable: true,
     });
 }
 
@@ -84,6 +84,7 @@ function initStage() {
         for (let i in selectedRects.value) {
             selectedRects.value[i].strokeWidth(1);
             selectedRects.value[i].stroke("black");
+            selectedRects.value[i].draggable(false);
         }
         selectedRects.value = [];
     })
@@ -105,22 +106,30 @@ function addDragstartHandler(rect) {
 function addClickHandler(rect) {
     rect.on("click", function (evt) {
         evt.cancelBubble = true;
-        const target = evt.target;
-        if (selectedRects.value.length > 0 && !(evt.evt.ctrlKey || evt.evt.metaKey)) {
+
+        if (evt.evt.ctrlKey || evt.evt.metaKey) {
+            if (selectedRects.value.map(el => el._id).includes(this._id)) {
+                this.strokeWidth(1);
+                this.stroke("black");
+                this.draggable(false);
+                selectedRects.value = selectedRects.value.filter(el => el._id !== this._id)
+            } else {
+                selectedRects.value.push(this);
+            }
+        } else {
             for (let i in selectedRects.value) {
                 selectedRects.value[i].strokeWidth(1);
                 selectedRects.value[i].stroke("black");
+                selectedRects.value[i].draggable(false);
             }
+            selectedRects.value = [this];
         }
 
-        if (evt.evt.ctrlKey || evt.evt.metaKey) {
-            selectedRects.value.push(target);
-        } else {
-            selectedRects.value = [target];
+        if (selectedRects.value.map(el => el._id).includes(this._id)) {
+            this.strokeWidth(3);
+            this.stroke("purple");
+            this.draggable(true);
         }
-        
-        this.strokeWidth(3);
-        this.stroke("purple");
     });
 }
 
