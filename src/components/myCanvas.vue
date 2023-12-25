@@ -264,6 +264,16 @@ onMounted(() => {
     coordinatesObj.value.centerDelta.y = Math.round(stage.value.attrs.height / 2);
 
     for (let i = 0; i < 10; i++) addRectToFirstLayer();
+
+    // const transformer = new Konva.Transformer();
+    // transformer.on("dragstart", function() {
+    //     document.getElementById("canvasContainer").style.cursor = "move";
+    // })
+    // transformer.on("dragend", function() {
+    //     document.getElementById("canvasContainer").style.cursor = "auto";
+    // })
+
+    // layer.add(transformer);
 })
 
 console.log("Created");
