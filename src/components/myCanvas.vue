@@ -109,7 +109,11 @@ function addClickHandler(group) {
     group.on("click", function (evt) {
         evt.cancelBubble = true;
 
-        const layer = getLayer();
+        const layer = evt.currentTarget.parent;
+        let groups = layer.children.filter(el => el.nodes === undefined);
+        groups = [...groups.filter(el => el.id !== this._id), this];
+        layer.children = [...groups, layer.children[layer.children.length - 1]];
+
         const lastElement = layer.children[layer.children.length - 1];
 
         let transformer;
