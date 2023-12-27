@@ -9,18 +9,17 @@ import Konva from "konva";
 
 const stage = ref(undefined);
 
-const selectedRects = ref([]);
-
 const cameraObj = ref({
     ZOOM_SENSITIVITY: 1.031,
 });
 
-const coordinatesObj = ref({
-    centerDelta: {
-        x: 0,
-        y: 0,
-    },
-})
+function getLayer() {
+    return stage.value.children[0];
+}
+
+function checkPixelInRect(rect, pixel) {
+    return pixel.x >= rect.x && pixel.x <= (rect.x + rect.width) && pixel.y >= rect.y && pixel.y <= (rect.y + rect.height)
+}
 
 function createRandomRect() {
     const sizing = {
@@ -29,8 +28,8 @@ function createRandomRect() {
     };
 
     const group = new Konva.Group({
-        x: Math.round(Math.random() * coordinatesObj.value.centerDelta.x * 2),
-        y: Math.round(Math.random() * coordinatesObj.value.centerDelta.y * 2),
+        x: Math.round(Math.random() * Math.round(stage.value.attrs.width / 2) * 2),
+        y: Math.round(Math.random() * Math.round(stage.value.attrs.height / 2) * 2),
         ...sizing,
     })
 
@@ -47,10 +46,11 @@ function createRandomRect() {
 }
 
 function addRectToFirstLayer() {
-    const rect = createRandomRect();
-    addDragstartHandler(rect);
-    addClickHandler(rect);
-    stage.value.children[0].add(rect);
+    const group = createRandomRect();
+    addClickHandler(group);
+
+    const layer = stage.value.children[0];
+    layer.add(group);
 }
 
 function scaleHandler(e) {
@@ -79,51 +79,7 @@ function scaleHandler(e) {
         y: pointer.y - mousePointTo.y * newScale,
     };
 
-    scaleSizingGroups();
-
     stage.value.position(newPos);
-}
-
-function scaleSizingGroups() {
-    const toolRectSizing = {
-        width: 7 / stage.value.scaleX(),
-        height: 7 / stage.value.scaleX(),
-    }
-    for (let i in selectedRects.value) {
-        selectedRects.value[i].children[0].strokeWidth(3 / stage.value.scaleX());
-
-        selectedRects.value[i].children[1].x(0);
-        selectedRects.value[i].children[1].y(0);
-        selectedRects.value[i].children[1].width(selectedRects.value[i].attrs.width);
-        selectedRects.value[i].children[1].height(selectedRects.value[i].attrs.height);
-
-        const toolRectPositions = [
-            {
-                x: -toolRectSizing.width / 2,
-                y: -toolRectSizing.height / 2,
-            },
-            {
-                x: selectedRects.value[i].attrs.width - toolRectSizing.width / 2,
-                y: -toolRectSizing.height / 2,
-            },
-            {
-                x: selectedRects.value[i].attrs.width - toolRectSizing.width / 2,
-                y: selectedRects.value[i].attrs.height - toolRectSizing.height / 2,
-            },
-            {
-                x: -toolRectSizing.width / 2,
-                y: selectedRects.value[i].attrs.height - toolRectSizing.height / 2,
-            },
-        ];
-
-        for (let j in selectedRects.value[i].children[1].children) {
-            selectedRects.value[i].children[1].children[j].x(toolRectPositions[j].x);
-            selectedRects.value[i].children[1].children[j].y(toolRectPositions[j].y);
-            selectedRects.value[i].children[1].children[j].width(toolRectSizing.width);
-            selectedRects.value[i].children[1].children[j].height(toolRectSizing.height);
-            selectedRects.value[i].children[1].children[j].strokeWidth(1 / stage.value.scaleX());
-        }
-    }
 }
 
 function initStage() {
@@ -136,144 +92,103 @@ function initStage() {
 
     stage.value.on("wheel", scaleHandler);
 
-    stage.value.on("click", function () {
-        for (let i in selectedRects.value) {
-            // const _rect = selectedRects.value[i].children[0];
-            disableGroupSelect(selectedRects.value[i]);
+    stage.value.on("click", function (evt) {
+        const layer = stage.value.children[0];
+        if (layer.children[layer.children.length - 1].nodes) {
+            layer.children[layer.children.length - 1].nodes([]);
         }
-        selectedRects.value = [];
     })
 }
 
 function createLayer() {
     const layer = new Konva.Layer();
-
     stage.value.add(layer);
 }
 
-function addDragstartHandler(group) {
-    group.on("dragstart", function (evt) {
-        const target = evt.target;
-        stage.value.children[0].children = [...stage.value.children[0].children.filter(el => el._id !== group._id), target];
-    });
-}
-
 function addClickHandler(group) {
-    const rect = group.children[group.children.length - 1];
-    rect.on("click", function (evt) {
-        const _group = group;
-
+    group.on("click", function (evt) {
         evt.cancelBubble = true;
 
-        if (evt.evt.ctrlKey || evt.evt.metaKey) {
-            if (selectedRects.value.map(el => el._id).includes(_group._id)) {
-                disableGroupSelect(_group);
-                selectedRects.value = selectedRects.value.filter(el => el._id !== this._id);
+        const layer = getLayer();
+        const lastElement = layer.children[layer.children.length - 1];
+
+        let transformer;
+        if (lastElement.nodes !== undefined) {
+            if (evt.evt.ctrlKey || evt.evt.metaKey) {
+                const nodes = lastElement.nodes();
+
+                if (nodes.map(el => el._id).includes(group._id)) {
+                    lastElement.nodes(nodes.filter(el => el._id !== group.id));
+                } else {
+                    lastElement.nodes([...nodes, group]);
+                }
             } else {
-                selectedRects.value.push(_group);
+                lastElement.nodes([group]);
             }
         } else {
-            for (let i in selectedRects.value) {
-                disableGroupSelect(selectedRects.value[i]);
-            }
-            selectedRects.value = [_group];
-        }
+            transformer = new Konva.Transformer({
+                nodes: [group],
+                shouldOverdrawWholeArea: true,
+            });
+            transformer.on("click", transformerClickHandler)
 
-        if (selectedRects.value.map(el => el._id).includes(_group._id)) {
-            setGroupSelected(_group);
+            layer.add(transformer);
         }
     });
 }
 
-function disableGroupSelect(group) {
-    const rect = group.children[0];
-    group.children = [rect];
-    rect.strokeWidth(1);
-    rect.stroke("black");
-    group.draggable(false);
-}
+function transformerClickHandler(_evt) {
+    const clickPos = {
+        x: _evt.evt.layerX,
+        y: _evt.evt.layerY
+    };
 
-function setGroupSelected(group) {
-    const resizeToolGroup = new Konva.Group({
-        x: 0,
-        y: 0,
-        width: group.attrs.width,
-        height: group.attrs.height,
-    })
+    let targetGroup;
+    const groups = this.parent.children.filter(el => el.nodes === undefined);
+    const nodes = this.nodes();
 
-    const toolRectSizing = {
-        width: 7 / stage.value.scaleX(),
-        height: 7 / stage.value.scaleX(),
+    for (let i in groups) {
+        const rectSizing = {
+            x: groups[i].x(),
+            y: groups[i].y(),
+            width: groups[i].width(),
+            height: groups[i].height(),
+        };
+
+        if (checkPixelInRect(rectSizing, clickPos)) {
+            targetGroup = groups[i];
+            break;
+        }
     }
-    const toolRectPositions = [
-        {
-            x: -toolRectSizing.width / 2,
-            y: -toolRectSizing.height / 2,
-        },
-        {
-            x: group.attrs.width - toolRectSizing.width / 2,
-            y: -toolRectSizing.height / 2,
-        },
-        {
-            x: group.attrs.width - toolRectSizing.width / 2,
-            y: group.attrs.height - toolRectSizing.height / 2,
-        },
-        {
-            x: -toolRectSizing.width / 2,
-            y: group.attrs.height - toolRectSizing.height / 2,
-        },
-    ];
 
-    for (let i in toolRectPositions) {
-        const toolRect = new Konva.Rect({
-            ...toolRectPositions[i],
-            ...toolRectSizing,
-            fill: "white",
-            stroke: "black",
-            strokeWidth: 1 / stage.value.scaleX(),
-        })
+    let inTransformer = false;
+    if (targetGroup !== undefined) {
+        const shapeSizing = {
+            x: this.x(),
+            y: this.y(),
+            width: this.width(),
+            height: this.height(),
+        };
+        inTransformer = checkPixelInRect(shapeSizing, clickPos);
+    }
 
-        toolRect.on("mouseover", function () {
-            if (i % 2 === 0) {
-                document.getElementById("canvasContainer").style.cursor = "nwse-resize";
+    if (inTransformer && targetGroup !== undefined) {
+        if (_evt.evt.ctrlKey || _evt.evt.metaKey) {
+            if (nodes.map(el => el._id).includes(targetGroup._id)) {
+                this.nodes(nodes.filter(el => el._id !== targetGroup._id))
             } else {
-                document.getElementById("canvasContainer").style.cursor = "nesw-resize";
+                this.nodes([...nodes, targetGroup]);
             }
-        })
-        toolRect.on("mouseleave", function () {
-            document.getElementById("canvasContainer").style.cursor = "auto"
-        })
-
-        resizeToolGroup.add(toolRect);
+        }
+        _evt.cancelBubble = true;
     }
-    group.add(resizeToolGroup);
-    // console.log(stage.value.scaleX());
-
-    const rect = group.children[0];
-    rect.strokeWidth(3 / stage.value.scaleX());
-    // rect.strokeWidth(3);
-    rect.stroke("purple");
-    group.draggable(true);
 }
 
 onMounted(() => {
     initStage();
     createLayer();
 
-    coordinatesObj.value.centerDelta.x = Math.round(stage.value.attrs.width / 2);
-    coordinatesObj.value.centerDelta.y = Math.round(stage.value.attrs.height / 2);
-
     for (let i = 0; i < 10; i++) addRectToFirstLayer();
-
-    // const transformer = new Konva.Transformer();
-    // transformer.on("dragstart", function() {
-    //     document.getElementById("canvasContainer").style.cursor = "move";
-    // })
-    // transformer.on("dragend", function() {
-    //     document.getElementById("canvasContainer").style.cursor = "auto";
-    // })
-
-    // layer.add(transformer);
 })
 
 console.log("Created");
