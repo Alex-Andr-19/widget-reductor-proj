@@ -338,10 +338,42 @@ function transformerClickHandler(_evt) {
     }
 }
 
+function createGlobalListeners() {
+    window.addEventListener("keydown", (evt) => {
+        const transformer = getTransformer();
+        const nodes = transformer?.nodes();
+        if (nodes?.length > 0) {
+            for (let i in nodes) {
+                let DELTA = 1;
+                if (evt.shiftKey) {
+                    DELTA *= 10;
+                }
+
+                switch (evt.key) {
+                    case "ArrowUp":
+                        nodes[i].y(nodes[i].y() - DELTA);
+                        break;
+                    case "ArrowDown":
+                        nodes[i].y(nodes[i].y() + DELTA);
+                        break;
+                    case "ArrowLeft":
+                        nodes[i].x(nodes[i].x() - DELTA);
+                        break;
+                    case "ArrowRight":
+                        nodes[i].x(nodes[i].x() + DELTA);
+                        break;
+                }
+            }
+        }
+    })
+}
+
 onMounted(() => {
     initStage();
 
     createLayer();
+
+    createGlobalListeners();
 })
 
 console.log("Created");
