@@ -40,8 +40,12 @@ function getSelectionRectangle() {
     return getLayer().find(".selectionRectangle")[0];
 }
 
+function getAllRootGroups() {
+    return getLayer().find(".group_0");
+}
+
 function checkPixelInRect(rect, pixel) {
-    return pixel.x >= rect.x && pixel.x <= (rect.x + rect.width) && pixel.y >= rect.y && pixel.y <= (rect.y + rect.height)
+    return Konva.Util.haveIntersection(rect, { ...pixel, width: 1, height: 1 });
 }
 
 function createRandomRect() {
@@ -51,6 +55,7 @@ function createRandomRect() {
     };
 
     const group = new Konva.Group({
+        name: "group_0",
         x: Math.round(Math.random() * Math.round(stage.value.attrs.width / 2) * 2),
         y: Math.round(Math.random() * Math.round(stage.value.attrs.height / 2) * 2),
         ...sizing,
@@ -99,8 +104,8 @@ function scaleHandler(e) {
         }
 
         const newPos = {
-            x: currentOffset.x + e.evt.deltaX * cameraObj.value.OFFSET_SENSITIVITY,
-            y: currentOffset.y + e.evt.deltaY * cameraObj.value.OFFSET_SENSITIVITY,
+            x: currentOffset.x + e.evt.deltaX * cameraObj.value.OFFSET_SENSITIVITY / Math.abs(stage.value.scale().x),
+            y: currentOffset.y + e.evt.deltaY * cameraObj.value.OFFSET_SENSITIVITY / Math.abs(stage.value.scale().x),
         }
         stage.value.offsetX(newPos.x);
         stage.value.offsetY(newPos.y);
@@ -160,7 +165,7 @@ function initStage() {
             return;
         }
         evt.evt.preventDefault();
-        
+
         selectionRectangleConf.value.coords.x1 = selectionRectangleConf.value.coords.x2 = (stage.value.getPointerPosition().x - stage.value.position().x) / stage.value.scale().x;
         selectionRectangleConf.value.coords.y1 = selectionRectangleConf.value.coords.y2 = (stage.value.getPointerPosition().y - stage.value.position().y) / stage.value.scale().y;
 
@@ -176,8 +181,8 @@ function initStage() {
             return;
         }
         evt.evt.preventDefault();
-        selectionRectangleConf.value.coords.x2 = (stage.value.getPointerPosition().x - stage.value.position().x) / stage.value.scale().x;
         selectionRectangleConf.value.coords.y2 = (stage.value.getPointerPosition().y - stage.value.position().y) / stage.value.scale().y;
+        selectionRectangleConf.value.coords.x2 = (stage.value.getPointerPosition().x - stage.value.position().x) / stage.value.scale().x;
 
         getSelectionRectangle().setAttrs({
             visible: true,
@@ -287,20 +292,20 @@ function addClickHandler(group) {
 
 function transformerClickHandler(_evt) {
     const clickPos = {
-        x: _evt.evt.layerX,
-        y: _evt.evt.layerY
+        x: (stage.value.getPointerPosition().x + stage.value.offsetX() - stage.value.position().x) / stage.value.scale().x,
+        y: (stage.value.getPointerPosition().y + stage.value.offsetY() - stage.value.position().y) / stage.value.scale().x,
     };
 
     let targetGroup;
-    const groups = this.parent.children.filter(el => el.nodes === undefined);
+    const groups = getAllRootGroups();
     const nodes = this.nodes();
 
     for (let i in groups) {
         const rectSizing = {
             x: groups[i].x(),
             y: groups[i].y(),
-            width: groups[i].width(),
-            height: groups[i].height(),
+            width: groups[i].width() * stage.value.scale().x,
+            height: groups[i].height() * stage.value.scale().x,
         };
 
         if (checkPixelInRect(rectSizing, clickPos)) {
@@ -312,11 +317,12 @@ function transformerClickHandler(_evt) {
     let inTransformer = false;
     if (targetGroup !== undefined) {
         const shapeSizing = {
-            x: this.x(),
-            y: this.y(),
-            width: this.width(),
-            height: this.height(),
+            x: (this.x() + stage.value.offsetX() - stage.value.position().x) / stage.value.scale().x,
+            y: (this.y() + stage.value.offsetY() - stage.value.position().y) / stage.value.scale().x,
+            width: this.width() * stage.value.scale().x,
+            height: this.height() * stage.value.scale().x,
         };
+
         inTransformer = checkPixelInRect(shapeSizing, clickPos);
     }
 
