@@ -292,8 +292,8 @@ function addClickHandler(group) {
 
 function transformerClickHandler(_evt) {
     const clickPos = {
-        x: (stage.value.getPointerPosition().x + stage.value.offsetX() - stage.value.position().x) / stage.value.scale().x,
-        y: (stage.value.getPointerPosition().y + stage.value.offsetY() - stage.value.position().y) / stage.value.scale().x,
+        x: stage.value.getPointerPosition().x + stage.value.offsetX(),
+        y: stage.value.getPointerPosition().y + stage.value.offsetY(),
     };
 
     let targetGroup;
@@ -314,11 +314,12 @@ function transformerClickHandler(_evt) {
         }
     }
 
+
     let inTransformer = false;
     if (targetGroup !== undefined) {
         const shapeSizing = {
-            x: (this.x() + stage.value.offsetX() - stage.value.position().x) / stage.value.scale().x,
-            y: (this.y() + stage.value.offsetY() - stage.value.position().y) / stage.value.scale().x,
+            x: this.x() + stage.value.offsetX(),
+            y: this.y() + stage.value.offsetY(),
             width: this.width() * stage.value.scale().x,
             height: this.height() * stage.value.scale().x,
         };
