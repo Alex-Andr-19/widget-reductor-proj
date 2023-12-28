@@ -14,8 +14,30 @@ const cameraObj = ref({
     OFFSET_SENSITIVITY: 1.031,
 });
 
-function getLayer() {
-    return stage.value.children[0];
+const rotationSnaps = [];
+for (let i = 0; i < 360; i += 90) rotationSnaps.push(i);
+
+const selectionRectangleConf = ref({
+    coords: {
+        x1: 0,
+        y1: 0,
+        x2: 0,
+        y2: 0,
+    },
+
+    selecting: false,
+})
+
+function getLayer(name = "mainLayer") {
+    return stage.value.find(`.${name}`)[0];
+}
+
+function getTransformer() {
+    return getLayer().find(".transformer")[0];
+}
+
+function getSelectionRectangle() {
+    return getLayer().find(".selectionRectangle")[0];
 }
 
 function checkPixelInRect(rect, pixel) {
@@ -68,6 +90,7 @@ function addRectToFirstLayer() {
 
 function scaleHandler(e) {
     e.evt.preventDefault();
+    const selectionRectangle = getSelectionRectangle();
 
     if (e.evt.deltaX % 1 === 0 && e.evt.deltaY % 1 === 0) {
         const currentOffset = {
@@ -75,10 +98,16 @@ function scaleHandler(e) {
             y: stage.value.offsetY(),
         }
 
-        stage.value.offsetX(currentOffset.x + e.evt.deltaX * cameraObj.value.OFFSET_SENSITIVITY)
-        stage.value.offsetY(currentOffset.y + e.evt.deltaY * cameraObj.value.OFFSET_SENSITIVITY)
-    } else {
+        const newPos = {
+            x: currentOffset.x + e.evt.deltaX * cameraObj.value.OFFSET_SENSITIVITY,
+            y: currentOffset.y + e.evt.deltaY * cameraObj.value.OFFSET_SENSITIVITY,
+        }
+        stage.value.offsetX(newPos.x);
+        stage.value.offsetY(newPos.y);
 
+        selectionRectangle.offsetX(-newPos.x);
+        selectionRectangle.offsetY(-newPos.y);
+    } else {
         const oldScale = stage.value.scaleX();
         const pointer = stage.value.getPointerPosition();
 
@@ -117,16 +146,103 @@ function initStage() {
 
     stage.value.on("click", function (evt) {
         const layer = getLayer();
-        if (layer.children[layer.children.length - 1].nodes) {
-            layer.children[layer.children.length - 1].nodes([]);
-            layer.children.splice(layer.children.length - 1, 1);
+        const transformer = getTransformer();
+
+        if (transformer !== undefined) {
+            transformer.nodes([]);
+            layer.children = layer.children.filter(el => el._id !== transformer._id);
         }
     })
+
+    stage.value.on('mousedown touchstart', function (evt) {
+        // do nothing if we mousedown on any shape
+        if (evt.target._id !== stage.value._id) {
+            return;
+        }
+        evt.evt.preventDefault();
+        
+        selectionRectangleConf.value.coords.x1 = selectionRectangleConf.value.coords.x2 = (stage.value.getPointerPosition().x - stage.value.position().x) / stage.value.scale().x;
+        selectionRectangleConf.value.coords.y1 = selectionRectangleConf.value.coords.y2 = (stage.value.getPointerPosition().y - stage.value.position().y) / stage.value.scale().y;
+
+        const selectionRectangle = getSelectionRectangle();
+        selectionRectangle.width(0);
+        selectionRectangle.height(0);
+        selectionRectangleConf.value.selecting = true;
+    });
+
+    stage.value.on('mousemove touchmove', function (evt) {
+        // do nothing if we didn't start selection
+        if (!selectionRectangleConf.value.selecting) {
+            return;
+        }
+        evt.evt.preventDefault();
+        selectionRectangleConf.value.coords.x2 = (stage.value.getPointerPosition().x - stage.value.position().x) / stage.value.scale().x;
+        selectionRectangleConf.value.coords.y2 = (stage.value.getPointerPosition().y - stage.value.position().y) / stage.value.scale().y;
+
+        getSelectionRectangle().setAttrs({
+            visible: true,
+            x: Math.min(selectionRectangleConf.value.coords.x1, selectionRectangleConf.value.coords.x2),
+            y: Math.min(selectionRectangleConf.value.coords.y1, selectionRectangleConf.value.coords.y2),
+            width: Math.abs(selectionRectangleConf.value.coords.x2 - selectionRectangleConf.value.coords.x1),
+            height: Math.abs(selectionRectangleConf.value.coords.y2 - selectionRectangleConf.value.coords.y1),
+        });
+    });
+
+    stage.value.on('mouseup touchend', function (evt) {
+        selectionRectangleConf.value.selecting = false;
+        const selectionRectangle = getSelectionRectangle();
+
+        if (!selectionRectangle.visible()) {
+            return;
+        }
+        evt.evt.preventDefault();
+
+        selectionRectangle.visible(false);
+
+        var shapes = stage.value.find('Group');
+        var box = selectionRectangle.getClientRect();
+        var selected = shapes.filter((shape) => Konva.Util.haveIntersection(box, shape.getClientRect()));
+
+        let rootTransformer = getTransformer();
+        if (selected.length > 0) {
+            if (rootTransformer === undefined) {
+                const layer = getLayer();
+
+                const transformer = new Konva.Transformer({
+                    nodes: [],
+                    name: "transformer",
+                    shouldOverdrawWholeArea: true,
+                    rotationSnaps,
+                    ignoreStroke: true,
+                    padding: 3,
+                });
+                transformer.on("click", transformerClickHandler)
+
+                layer.add(transformer);
+            }
+
+            rootTransformer = getTransformer();
+
+            rootTransformer.nodes(selected);
+        }
+
+    });
 }
 
 function createLayer() {
-    const layer = new Konva.Layer();
+    const layer = new Konva.Layer({
+        name: "mainLayer",
+    });
     stage.value.add(layer);
+
+    for (let i = 0; i < 10; i++) addRectToFirstLayer();
+
+    const selectionRectangle = new Konva.Rect({
+        name: "selectionRectangle",
+        fill: 'rgba(0,0,255,0.3)',
+        visible: false,
+    });
+    layer.add(selectionRectangle);
 }
 
 function addClickHandler(group) {
@@ -136,7 +252,7 @@ function addClickHandler(group) {
         const layer = evt.currentTarget.parent;
         let groups = layer.children.filter(el => el.nodes === undefined);
         groups = [...groups.filter(el => el._id !== this._id), this];
-        layer.children = [...groups, layer.children.find(el => el.nodes !== undefined)].filter(el => el !== undefined);
+        layer.children = [...groups, getTransformer()].filter(el => el !== undefined);
 
         const lastElement = layer.children[layer.children.length - 1];
 
@@ -154,11 +270,9 @@ function addClickHandler(group) {
                 lastElement.nodes([group]);
             }
         } else {
-            const rotationSnaps = [];
-            for (let i = 0; i < 360; i += 90) rotationSnaps.push(i);
-
             transformer = new Konva.Transformer({
                 nodes: [group],
+                name: "transformer",
                 shouldOverdrawWholeArea: true,
                 rotationSnaps,
                 ignoreStroke: true,
@@ -220,9 +334,8 @@ function transformerClickHandler(_evt) {
 
 onMounted(() => {
     initStage();
-    createLayer();
 
-    for (let i = 0; i < 10; i++) addRectToFirstLayer();
+    createLayer();
 })
 
 console.log("Created");

@@ -17,9 +17,6 @@ importers:
       vue:
         specifier: ^3.3.8
         version: 3.3.8
-      vue-konva:
-        specifier: ^3.0.2
-        version: 3.0.2(konva@9.2.3)
       vue-router:
         specifier: ^4.2.5
         version: 4.2.5(vue@3.3.8)
@@ -604,15 +601,6 @@ packages:
         optional: true
     dependencies:
       vue: 3.3.8
-    dev: false
-
-  /vue-konva@3.0.2(konva@9.2.3):
-    resolution: {integrity: sha512-FNWKtPPVDihNuQcq7F4GzuVPkPaEfg8lnWezpRqgiC2VetdvONOiYOFD800jNL5kt/lEYnSOYvhqqdTPbv2c8w==}
-    engines: {node: '>= 4.0.0', npm: '>= 3.0.0'}
-    peerDependencies:
-      konva: '>7'
-    dependencies:
-      konva: 9.2.3
     dev: false
 
   /vue-router@4.2.5(vue@3.3.8):
