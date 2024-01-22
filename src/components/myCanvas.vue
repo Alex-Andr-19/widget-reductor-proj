@@ -28,118 +28,6 @@ const selectionRectangleConf = ref({
     selecting: false,
 })
 
-function getLayer(name = "mainLayer") {
-    return stage.value.find(`.${name}`)[0];
-}
-
-function getTransformer() {
-    return getLayer().find(".transformer")[0];
-}
-
-function getSelectionRectangle() {
-    return getLayer().find(".selectionRectangle")[0];
-}
-
-function getAllRootGroups() {
-    return getLayer().find(".group_0");
-}
-
-function checkPixelInRect(rect, pixel) {
-    return Konva.Util.haveIntersection(rect, { ...pixel, width: 1, height: 1 });
-}
-
-function createRandomRect() {
-    const sizing = {
-        width: Math.round(Math.random() * 50 + 50),
-        height: Math.round(Math.random() * 50 + 50),
-    };
-
-    const group = new Konva.Group({
-        name: "group_0",
-        x: Math.round(Math.random() * Math.round(stage.value.attrs.width / 2) * 2),
-        y: Math.round(Math.random() * Math.round(stage.value.attrs.height / 2) * 2),
-        ...sizing,
-    })
-
-    group.on("transform", function (evt) {
-        const newSizing = {
-            width: group.width() * group.scaleX(),
-            height: group.height() * group.scaleY(),
-            scaleX: 1,
-            scaleY: 1,
-        }
-
-        group.setAttrs(newSizing);
-        group.children[0].setAttrs(newSizing);
-    })
-
-    group.add(new Konva.Rect({
-        x: 0,
-        y: 0,
-        ...sizing,
-        fill: 'green',
-        stroke: 'black',
-        strokeWidth: 1,
-    }))
-
-    return group;
-}
-
-function addRectToFirstLayer() {
-    const group = createRandomRect();
-    addClickHandler(group);
-
-    const layer = stage.value.children[0];
-    layer.add(group);
-}
-
-function scaleHandler(e) {
-    e.evt.preventDefault();
-    const selectionRectangle = getSelectionRectangle();
-
-    if (e.evt.deltaX % 1 === 0 && e.evt.deltaY % 1 === 0) {
-        const currentOffset = {
-            x: stage.value.offsetX(),
-            y: stage.value.offsetY(),
-        }
-
-        const newPos = {
-            x: currentOffset.x + e.evt.deltaX * cameraObj.value.OFFSET_SENSITIVITY / Math.abs(stage.value.scale().x),
-            y: currentOffset.y + e.evt.deltaY * cameraObj.value.OFFSET_SENSITIVITY / Math.abs(stage.value.scale().x),
-        }
-        stage.value.offsetX(newPos.x);
-        stage.value.offsetY(newPos.y);
-
-        selectionRectangle.offsetX(-newPos.x);
-        selectionRectangle.offsetY(-newPos.y);
-    } else {
-        const oldScale = stage.value.scaleX();
-        const pointer = stage.value.getPointerPosition();
-
-        const mousePointTo = {
-            x: (pointer.x - stage.value.x()) / oldScale,
-            y: (pointer.y - stage.value.y()) / oldScale,
-        };
-
-        let direction = e.evt.deltaY > 0 ? -1 : 1;
-
-        if (e.evt.metaKey) {
-            direction = -direction;
-        }
-
-        var newScale = direction > 0 ? oldScale * cameraObj.value.ZOOM_SENSITIVITY : oldScale / cameraObj.value.ZOOM_SENSITIVITY;
-
-        stage.value.scale({ x: newScale, y: newScale });
-
-        var newPos = {
-            x: pointer.x - mousePointTo.x * newScale,
-            y: pointer.y - mousePointTo.y * newScale,
-        };
-
-        stage.value.position(newPos);
-    }
-}
-
 function initStage() {
     stage.value = new Konva.Stage({
         container: "canvasContainer",
@@ -147,6 +35,10 @@ function initStage() {
         height: document.querySelector(".mainPage__mainBlock__canvas").clientHeight,
     })
 
+    createStageEventListeners();
+}
+
+function createStageEventListeners() {
     stage.value.on("wheel", scaleHandler);
 
     stage.value.on("click", function (evt) {
@@ -240,7 +132,8 @@ function createLayer() {
     });
     stage.value.add(layer);
 
-    for (let i = 0; i < 10; i++) addRectToFirstLayer();
+    // for (let i = 0; i < 10; i++) addRectToFirstLayer();
+    addRectToFirstLayer();
 
     const selectionRectangle = new Konva.Rect({
         name: "selectionRectangle",
@@ -248,6 +141,136 @@ function createLayer() {
         visible: false,
     });
     layer.add(selectionRectangle);
+}
+
+function createRandomRect() {
+    const sizing = {
+        width: Math.round(Math.random() * 50 + 50),
+        height: Math.round(Math.random() * 50 + 50),
+    };
+
+    const group = new Konva.Group({
+        name: "group_0",
+        x: Math.round(Math.random() * Math.round(stage.value.attrs.width / 2) * 2),
+        y: Math.round(Math.random() * Math.round(stage.value.attrs.height / 2) * 2),
+        ...sizing,
+    })
+
+    group.on("transform", function (evt) {
+        const newSizing = {
+            width: group.width() * group.scaleX(),
+            height: group.height() * group.scaleY(),
+            scaleX: 1,
+            scaleY: 1,
+        }
+
+        group.setAttrs(newSizing);
+        group.children[0].setAttrs(newSizing);
+    })
+
+    group.add(new Konva.Rect({
+        x: 0,
+        y: 0,
+        ...sizing,
+        fill: 'green',
+        stroke: 'black',
+        strokeWidth: 1,
+    }))
+
+    return group;
+}
+
+function createWidgetLayout() {
+    const ratioValue = 16 / 9;
+    const sizing = {
+        width: 260 * ratioValue,
+        height: 260,
+    }
+    const position = {
+        x: Math.round(stage.value.attrs.width / 2 - sizing.width / 2),
+        y: Math.round(stage.value.attrs.height / 2 - sizing.height / 2),
+    }
+
+    const widgetGroup = new Konva.Group({
+        name: "widgetGroup",
+        ...position,
+        ...sizing,
+    });
+
+    console.log(sizing, position);
+
+    widgetGroup.on("transform", function (evt) {
+        const newSizing = {
+            width: widgetGroup.width() * widgetGroup.scaleX(),
+            height: widgetGroup.height() * widgetGroup.scaleY(),
+            scaleX: 1,
+            scaleY: 1,
+        }
+
+        widgetGroup.setAttrs(newSizing);
+        widgetGroup.children[0].setAttrs(newSizing);
+    })
+
+    widgetGroup.add(new Konva.Rect({
+        x: 0,
+        y: 0,
+        ...sizing,
+        fill: '#18191c',
+        cornerRadius: 6,
+    }))
+    widgetGroup.add(new Konva.Rect({
+        x: 0,
+        y: 0,
+        ...sizing,
+        height: 30,
+        // fill: '#18191c',
+        fillLinearGradientStartPoint: { x: 0, y: 30 },
+        fillLinearGradientEndPoint: { x: sizing.width, y: 50 },
+        fillLinearGradientColorStops: [0, '#18191c', 1, '#40434c'],
+        cornerRadius: [6, 6, 0, 0],
+    }))
+    widgetGroup.add(new Konva.Line({
+        x: 0,
+        y: 30,
+        ...sizing,
+        height: 30,
+        // fill: '#18191c',
+        fillLinearGradientStartPoint: { x: 0, y: 30 },
+        fillLinearGradientEndPoint: { x: sizing.width, y: 50 },
+        fillLinearGradientColorStops: [0, '#18191c', 1, '#40434c'],
+        cornerRadius: [6, 6, 0, 0],
+    }))
+
+    return widgetGroup;
+}
+
+function getLayer(name = "mainLayer") {
+    return stage.value.find(`.${name}`)[0];
+}
+
+function getTransformer() {
+    return getLayer().find(".transformer")[0];
+}
+
+function getSelectionRectangle() {
+    return getLayer().find(".selectionRectangle")[0];
+}
+
+function getAllRootGroups() {
+    return getLayer().find(".group_0");
+}
+
+function checkPixelInRect(rect, pixel) {
+    return Konva.Util.haveIntersection(rect, { ...pixel, width: 1, height: 1 });
+}
+
+function addRectToFirstLayer() {
+    // const group = createRandomRect();
+    const group = createWidgetLayout();
+    addClickHandler(group);
+
+    const layer = stage.value.children[0];
+    layer.add(group);
 }
 
 function addClickHandler(group) {
@@ -263,7 +286,8 @@ function addClickHandler(group) {
 
         let transformer;
         if (lastElement.nodes !== undefined) {
-            if (evt.evt.ctrlKey || evt.evt.metaKey) {
+            // if (evt.evt.ctrlKey || evt.evt.metaKey) {
+            if (evt.evt.shiftKey) {
                 const nodes = lastElement.nodes();
 
                 if (nodes.map(el => el._id).includes(group._id)) {
@@ -336,6 +360,53 @@ function transformerClickHandler(_evt) {
             }
         }
         _evt.cancelBubble = true;
+    }
+}
+
+function scaleHandler(e) {
+    e.evt.preventDefault();
+    const selectionRectangle = getSelectionRectangle();
+
+    if (e.evt.deltaX % 1 === 0 && e.evt.deltaY % 1 === 0) {
+        const currentOffset = {
+            x: stage.value.offsetX(),
+            y: stage.value.offsetY(),
+        }
+
+        const newPos = {
+            x: currentOffset.x + e.evt.deltaX * cameraObj.value.OFFSET_SENSITIVITY / Math.abs(stage.value.scale().x),
+            y: currentOffset.y + e.evt.deltaY * cameraObj.value.OFFSET_SENSITIVITY / Math.abs(stage.value.scale().x),
+        }
+        stage.value.offsetX(newPos.x);
+        stage.value.offsetY(newPos.y);
+
+        selectionRectangle.offsetX(-newPos.x);
+        selectionRectangle.offsetY(-newPos.y);
+    } else {
+        const oldScale = stage.value.scaleX();
+        const pointer = stage.value.getPointerPosition();
+
+        const mousePointTo = {
+            x: (pointer.x - stage.value.x()) / oldScale,
+            y: (pointer.y - stage.value.y()) / oldScale,
+        };
+
+        let direction = e.evt.deltaY > 0 ? -1 : 1;
+
+        if (e.evt.metaKey) {
+            direction = -direction;
+        }
+
+        var newScale = direction > 0 ? oldScale * cameraObj.value.ZOOM_SENSITIVITY : oldScale / cameraObj.value.ZOOM_SENSITIVITY;
+
+        stage.value.scale({ x: newScale, y: newScale });
+
+        var newPos = {
+            x: pointer.x - mousePointTo.x * newScale,
+            y: pointer.y - mousePointTo.y * newScale,
+        };
+
+        stage.value.position(newPos);
     }
 }
 
