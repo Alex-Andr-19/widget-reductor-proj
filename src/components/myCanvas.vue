@@ -190,14 +190,17 @@ function createWidgetLayout() {
         x: Math.round(stage.value.attrs.width / 2 - sizing.width / 2),
         y: Math.round(stage.value.attrs.height / 2 - sizing.height / 2),
     }
+    const today = new Date();
+    const datetime = {
+        date: today.toLocaleDateString("ru"),
+        time: `${String(today.getHours()).padStart(2, "0")}:${String(today.getMinutes()).padStart(2, "0")}:${String(today.getSeconds()).padStart(2, "0")}`,
+    }
 
     const widgetGroup = new Konva.Group({
         name: "widgetGroup",
         ...position,
         ...sizing,
     });
-
-    console.log(sizing, position);
 
     widgetGroup.on("transform", function (evt) {
         const newSizing = {
@@ -223,22 +226,44 @@ function createWidgetLayout() {
         y: 0,
         ...sizing,
         height: 30,
-        // fill: '#18191c',
         fillLinearGradientStartPoint: { x: 0, y: 30 },
-        fillLinearGradientEndPoint: { x: sizing.width, y: 50 },
+        fillLinearGradientEndPoint: { x: sizing.width, y: 0 },
         fillLinearGradientColorStops: [0, '#18191c', 1, '#40434c'],
         cornerRadius: [6, 6, 0, 0],
     }))
     widgetGroup.add(new Konva.Line({
-        x: 0,
-        y: 30,
-        ...sizing,
-        height: 30,
-        // fill: '#18191c',
-        fillLinearGradientStartPoint: { x: 0, y: 30 },
-        fillLinearGradientEndPoint: { x: sizing.width, y: 50 },
-        fillLinearGradientColorStops: [0, '#18191c', 1, '#40434c'],
-        cornerRadius: [6, 6, 0, 0],
+        points: [0, 30, sizing.width, 30],
+        stroke: "#40434c",
+        strokeWidth: 1,
+    }))
+    widgetGroup.add(new Konva.Text({
+        name: "widgetName",
+        x: 10,
+        y: 10,
+        text: "Название виджета",
+        fill: "#fff",
+    }))
+    widgetGroup.add(new Konva.Text({
+        name: "widgetUpdateTime",
+        x: sizing.width - 62,
+        y: 6,
+        text: `${datetime.date}\n${datetime.time}`,
+        fill: "#fff",
+        fontSize: 10,
+        align: "right",
+    }))
+    // widgetGroup.add(new Konva.TextPath({
+    widgetGroup.add(new Konva.TextPath({
+        // name: "widgetAsideText",
+        x: 10,
+        y: sizing.height - 10,
+        // y: 50,
+        text: "Some text",
+        fill: "#fff",
+        // data: 'C0,0 10,150 100,100 S300,150 5.0.300',
+        data: 'C0,0 0,0 0,100',
+        // fontSize: 10,
+        rotation: 180,
     }))
 
     return widgetGroup;
