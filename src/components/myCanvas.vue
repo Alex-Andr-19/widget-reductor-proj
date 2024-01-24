@@ -48,46 +48,45 @@ function createStageEventListeners() {
 function scrollHandler(e) {
     e.evt.preventDefault();
 
-    if (e.evt.deltaX % 1 === 0 && e.evt.deltaY % 1 === 0) {
-        const currentOffset = {
-            x: stage.value.offsetX(),
-            y: stage.value.offsetY(),
+    if (document.querySelector("body > input") === null) {
+        if (e.evt.deltaX % 1 === 0 && e.evt.deltaY % 1 === 0) {
+            const currentOffset = {
+                x: stage.value.offsetX(),
+                y: stage.value.offsetY(),
+            }
+
+            const newPos = {
+                x: currentOffset.x + e.evt.deltaX * cameraObj.value.OFFSET_SENSITIVITY / Math.abs(stage.value.scale().x),
+                y: currentOffset.y + e.evt.deltaY * cameraObj.value.OFFSET_SENSITIVITY / Math.abs(stage.value.scale().x),
+            }
+            stage.value.offsetX(newPos.x);
+            stage.value.offsetY(newPos.y);
+        } else {
+            const oldScale = stage.value.scaleX();
+            const pointer = stage.value.getPointerPosition();
+
+            const mousePointTo = {
+                x: (pointer.x - stage.value.x()) / oldScale,
+                y: (pointer.y - stage.value.y()) / oldScale,
+            };
+
+            let direction = e.evt.deltaY > 0 ? -1 : 1;
+
+            if (e.evt.metaKey) {
+                direction = -direction;
+            }
+
+            var newScale = direction > 0 ? oldScale * cameraObj.value.ZOOM_SENSITIVITY : oldScale / cameraObj.value.ZOOM_SENSITIVITY;
+
+            stage.value.scale({ x: newScale, y: newScale });
+
+            var newPos = {
+                x: pointer.x - mousePointTo.x * newScale,
+                y: pointer.y - mousePointTo.y * newScale,
+            };
+
+            stage.value.position(newPos);
         }
-
-        const newPos = {
-            x: currentOffset.x + e.evt.deltaX * cameraObj.value.OFFSET_SENSITIVITY / Math.abs(stage.value.scale().x),
-            y: currentOffset.y + e.evt.deltaY * cameraObj.value.OFFSET_SENSITIVITY / Math.abs(stage.value.scale().x),
-        }
-        stage.value.offsetX(newPos.x);
-        stage.value.offsetY(newPos.y);
-
-        selectionRectangle.offsetX(-newPos.x);
-        selectionRectangle.offsetY(-newPos.y);
-    } else {
-        const oldScale = stage.value.scaleX();
-        const pointer = stage.value.getPointerPosition();
-
-        const mousePointTo = {
-            x: (pointer.x - stage.value.x()) / oldScale,
-            y: (pointer.y - stage.value.y()) / oldScale,
-        };
-
-        let direction = e.evt.deltaY > 0 ? -1 : 1;
-
-        if (e.evt.metaKey) {
-            direction = -direction;
-        }
-
-        var newScale = direction > 0 ? oldScale * cameraObj.value.ZOOM_SENSITIVITY : oldScale / cameraObj.value.ZOOM_SENSITIVITY;
-
-        stage.value.scale({ x: newScale, y: newScale });
-
-        var newPos = {
-            x: pointer.x - mousePointTo.x * newScale,
-            y: pointer.y - mousePointTo.y * newScale,
-        };
-
-        stage.value.position(newPos);
     }
 }
 
@@ -99,12 +98,19 @@ function createLayer() {
 
     addRectToFirstLayer();
 }
+function getMainLayer() {
+    return stage.value.find(".mainLayer")[0];
+}
 
 function addRectToFirstLayer() {
     const group = createWidgetLayout();
-
-    const layer = stage.value.children[0];
+    const layer = getMainLayer();
     layer.add(group);
+
+    const allTemplateEditableText = layer.find(".editableText");
+    for (let i in allTemplateEditableText) {
+        addEditableToText(allTemplateEditableText[i]);
+    }
 }
 
 function createWidgetLayout() {
@@ -122,6 +128,55 @@ function createWidgetLayout() {
     createWidgetTemplateChildren(widgetGroup);
 
     return widgetGroup;
+}
+
+function addEditableToText(editableText) {
+    console.log(editableText);
+
+    editableText.on('dblclick dbltap', () => {
+        var textPosition = editableText.getAbsolutePosition();
+
+        var stageBox = stage.value.container().getBoundingClientRect();
+
+        var areaPosition = {
+            x: stageBox.left + textPosition.x,
+            y: stageBox.top + textPosition.y,
+        };
+
+        var input = document.createElement('input');
+        document.body.appendChild(input);
+
+        input.type = "text";
+        input.value = editableText.text();
+        input.row = 1;
+        input.style.position = 'absolute';
+        input.style.top = areaPosition.y + 'px';
+        input.style.left = areaPosition.x + 'px';
+
+        console.log(sizing);
+        switch (editableText.id()) {
+            case "widgetAsideText":
+                input.classList.add("widgetAsideText");
+                input.style.width = sizing.height - 45 + "px";
+                break
+            case "widgetTitle":
+                input.style.width = sizing.width - 85 + "px";
+                break
+        }
+
+        console.log(input.style);
+
+        input.focus();
+
+        input.addEventListener('keydown', function (e) {
+            if ([13, 27].includes(e.keyCode)) {
+                if (e.keyCode === 13) {
+                    editableText.text(input.value);
+                }
+                document.body.removeChild(input);
+            }
+        });
+    });
 }
 
 function createWidgetTemplateChildren(widgetGroup) {
@@ -164,14 +219,16 @@ function createWidgetTemplateText(widgetGroup) {
     const texts = [];
 
     texts.push(new Konva.Text({
-        name: "widgetName",
+        id: "widgetTitle",
+        name: "editableText",
         x: 10,
         y: 10,
         text: "Название виджета",
         fill: "#fff",
     }))
     texts.push(new Konva.Text({
-        name: "widgetUpdateTime",
+        id: "widgetUpdateTime",
+        name: "text",
         x: sizing.width - 62,
         y: 6,
         text: `${datetime.date}\n${datetime.time}`,
@@ -180,6 +237,8 @@ function createWidgetTemplateText(widgetGroup) {
         align: "right",
     }))
     texts.push(new Konva.TextPath({
+        id: "widgetAsideText",
+        name: "editableText",
         x: 10,
         y: sizing.height - 10,
         text: "Some text",
@@ -206,5 +265,9 @@ console.log("Created");
 #canvasContainer {
     width: 100%;
     height: 100%;
+}
+
+.widgetAsideText {
+    transform: rotate(-90deg) translateX(116px) translateY(-105px);
 }
 </style>
