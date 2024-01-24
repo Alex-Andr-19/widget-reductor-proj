@@ -115,18 +115,6 @@ function createWidgetLayout() {
         ...sizing,
     });
 
-    widgetGroup.on("transform", function (evt) {
-        const newSizing = {
-            width: widgetGroup.width() * widgetGroup.scaleX(),
-            height: widgetGroup.height() * widgetGroup.scaleY(),
-            scaleX: 1,
-            scaleY: 1,
-        }
-
-        widgetGroup.setAttrs(newSizing);
-        widgetGroup.children[0].setAttrs(newSizing);
-    })
-
     widgetGroup.add(new Konva.Rect({
         x: 0,
         y: 0,
