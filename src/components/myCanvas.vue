@@ -28,7 +28,53 @@ function initStage() {
 }
 
 function createStageEventListeners() {
-    stage.value.on("wheel", scaleHandler);
+    stage.value.on("wheel", scrollHandler);
+}
+
+function scrollHandler(e) {
+    e.evt.preventDefault();
+
+    if (e.evt.deltaX % 1 === 0 && e.evt.deltaY % 1 === 0) {
+        const currentOffset = {
+            x: stage.value.offsetX(),
+            y: stage.value.offsetY(),
+        }
+
+        const newPos = {
+            x: currentOffset.x + e.evt.deltaX * cameraObj.value.OFFSET_SENSITIVITY / Math.abs(stage.value.scale().x),
+            y: currentOffset.y + e.evt.deltaY * cameraObj.value.OFFSET_SENSITIVITY / Math.abs(stage.value.scale().x),
+        }
+        stage.value.offsetX(newPos.x);
+        stage.value.offsetY(newPos.y);
+
+        selectionRectangle.offsetX(-newPos.x);
+        selectionRectangle.offsetY(-newPos.y);
+    } else {
+        const oldScale = stage.value.scaleX();
+        const pointer = stage.value.getPointerPosition();
+
+        const mousePointTo = {
+            x: (pointer.x - stage.value.x()) / oldScale,
+            y: (pointer.y - stage.value.y()) / oldScale,
+        };
+
+        let direction = e.evt.deltaY > 0 ? -1 : 1;
+
+        if (e.evt.metaKey) {
+            direction = -direction;
+        }
+
+        var newScale = direction > 0 ? oldScale * cameraObj.value.ZOOM_SENSITIVITY : oldScale / cameraObj.value.ZOOM_SENSITIVITY;
+
+        stage.value.scale({ x: newScale, y: newScale });
+
+        var newPos = {
+            x: pointer.x - mousePointTo.x * newScale,
+            y: pointer.y - mousePointTo.y * newScale,
+        };
+
+        stage.value.position(newPos);
+    }
 }
 
 function createLayer() {
@@ -38,6 +84,9 @@ function createLayer() {
     stage.value.add(layer);
 
     addRectToFirstLayer();
+}
+function getLayer(name = "mainLayer") {
+    return stage.value.find(`.${name}`)[0];
 }
 
 function addRectToFirstLayer() {
@@ -129,61 +178,6 @@ function createWidgetLayout() {
     }))
 
     return widgetGroup;
-}
-
-function getLayer(name = "mainLayer") {
-    return stage.value.find(`.${name}`)[0];
-}
-
-function getSelectionRectangle() {
-    return getLayer().find(".selectionRectangle")[0];
-}
-
-function scaleHandler(e) {
-    e.evt.preventDefault();
-    const selectionRectangle = getSelectionRectangle();
-
-    if (e.evt.deltaX % 1 === 0 && e.evt.deltaY % 1 === 0) {
-        const currentOffset = {
-            x: stage.value.offsetX(),
-            y: stage.value.offsetY(),
-        }
-
-        const newPos = {
-            x: currentOffset.x + e.evt.deltaX * cameraObj.value.OFFSET_SENSITIVITY / Math.abs(stage.value.scale().x),
-            y: currentOffset.y + e.evt.deltaY * cameraObj.value.OFFSET_SENSITIVITY / Math.abs(stage.value.scale().x),
-        }
-        stage.value.offsetX(newPos.x);
-        stage.value.offsetY(newPos.y);
-
-        selectionRectangle.offsetX(-newPos.x);
-        selectionRectangle.offsetY(-newPos.y);
-    } else {
-        const oldScale = stage.value.scaleX();
-        const pointer = stage.value.getPointerPosition();
-
-        const mousePointTo = {
-            x: (pointer.x - stage.value.x()) / oldScale,
-            y: (pointer.y - stage.value.y()) / oldScale,
-        };
-
-        let direction = e.evt.deltaY > 0 ? -1 : 1;
-
-        if (e.evt.metaKey) {
-            direction = -direction;
-        }
-
-        var newScale = direction > 0 ? oldScale * cameraObj.value.ZOOM_SENSITIVITY : oldScale / cameraObj.value.ZOOM_SENSITIVITY;
-
-        stage.value.scale({ x: newScale, y: newScale });
-
-        var newPos = {
-            x: pointer.x - mousePointTo.x * newScale,
-            y: pointer.y - mousePointTo.y * newScale,
-        };
-
-        stage.value.position(newPos);
-    }
 }
 
 onMounted(() => {
