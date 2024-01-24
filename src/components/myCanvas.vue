@@ -85,9 +85,6 @@ function createLayer() {
 
     addRectToFirstLayer();
 }
-function getLayer(name = "mainLayer") {
-    return stage.value.find(`.${name}`)[0];
-}
 
 function addRectToFirstLayer() {
     const group = createWidgetLayout();
