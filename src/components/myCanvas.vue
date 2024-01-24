@@ -252,17 +252,12 @@ function createWidgetLayout() {
         fontSize: 10,
         align: "right",
     }))
-    // widgetGroup.add(new Konva.TextPath({
     widgetGroup.add(new Konva.TextPath({
-        // name: "widgetAsideText",
         x: 10,
         y: sizing.height - 10,
-        // y: 50,
         text: "Some text",
         fill: "#fff",
-        // data: 'C0,0 10,150 100,100 S300,150 5.0.300',
         data: 'C0,0 0,0 0,100',
-        // fontSize: 10,
         rotation: 180,
     }))
 
