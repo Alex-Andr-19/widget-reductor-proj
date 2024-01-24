@@ -131,8 +131,6 @@ function createWidgetLayout() {
 }
 
 function addEditableToText(editableText) {
-    console.log(editableText);
-
     editableText.on('dblclick dbltap', () => {
         var textPosition = editableText.getAbsolutePosition();
 
@@ -153,7 +151,6 @@ function addEditableToText(editableText) {
         input.style.top = areaPosition.y + 'px';
         input.style.left = areaPosition.x + 'px';
 
-        console.log(sizing);
         switch (editableText.id()) {
             case "widgetAsideText":
                 input.classList.add("widgetAsideText");
@@ -163,8 +160,6 @@ function addEditableToText(editableText) {
                 input.style.width = sizing.width - 85 + "px";
                 break
         }
-
-        console.log(input.style);
 
         input.focus();
 
