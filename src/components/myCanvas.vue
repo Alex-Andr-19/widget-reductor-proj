@@ -14,8 +14,22 @@ const cameraObj = ref({
     OFFSET_SENSITIVITY: 1.031,
 });
 
-const rotationSnaps = [];
-for (let i = 0; i < 360; i += 90) rotationSnaps.push(i);
+
+/* ===== Widget Settings ===== */
+
+const ratioValue = 16 / 9;
+const sizing = {
+    width: 260 * ratioValue,
+    height: 260,
+}
+const today = new Date();
+const datetime = {
+    date: today.toLocaleDateString("ru"),
+    time: `${String(today.getHours()).padStart(2, "0")}:${String(today.getMinutes()).padStart(2, "0")}:${String(today.getSeconds()).padStart(2, "0")}`,
+}
+
+/* =========================== */
+
 
 function initStage() {
     stage.value = new Konva.Stage({
@@ -94,19 +108,9 @@ function addRectToFirstLayer() {
 }
 
 function createWidgetLayout() {
-    const ratioValue = 16 / 9;
-    const sizing = {
-        width: 260 * ratioValue,
-        height: 260,
-    }
     const position = {
         x: Math.round(stage.value.attrs.width / 2 - sizing.width / 2),
         y: Math.round(stage.value.attrs.height / 2 - sizing.height / 2),
-    }
-    const today = new Date();
-    const datetime = {
-        date: today.toLocaleDateString("ru"),
-        time: `${String(today.getHours()).padStart(2, "0")}:${String(today.getMinutes()).padStart(2, "0")}:${String(today.getSeconds()).padStart(2, "0")}`,
     }
 
     const widgetGroup = new Konva.Group({
@@ -115,14 +119,27 @@ function createWidgetLayout() {
         ...sizing,
     });
 
-    widgetGroup.add(new Konva.Rect({
+    createWidgetTemplateChildren(widgetGroup);
+
+    return widgetGroup;
+}
+
+function createWidgetTemplateChildren(widgetGroup) {
+    createWidgetTemplateRects(widgetGroup);
+
+    createWidgetTemplateText(widgetGroup);
+}
+
+function createWidgetTemplateRects(widgetGroup) {
+    const rects = [];
+    rects.push(new Konva.Rect({
         x: 0,
         y: 0,
         ...sizing,
         fill: '#18191c',
         cornerRadius: 6,
     }))
-    widgetGroup.add(new Konva.Rect({
+    rects.push(new Konva.Rect({
         x: 0,
         y: 0,
         ...sizing,
@@ -132,19 +149,28 @@ function createWidgetLayout() {
         fillLinearGradientColorStops: [0, '#18191c', 1, '#40434c'],
         cornerRadius: [6, 6, 0, 0],
     }))
-    widgetGroup.add(new Konva.Line({
+    rects.push(new Konva.Line({
         points: [0, 30, sizing.width, 30],
         stroke: "#40434c",
         strokeWidth: 1,
     }))
-    widgetGroup.add(new Konva.Text({
+
+    for (let i in rects) {
+        widgetGroup.add(rects[i]);
+    }
+}
+
+function createWidgetTemplateText(widgetGroup) {
+    const texts = [];
+
+    texts.push(new Konva.Text({
         name: "widgetName",
         x: 10,
         y: 10,
         text: "Название виджета",
         fill: "#fff",
     }))
-    widgetGroup.add(new Konva.Text({
+    texts.push(new Konva.Text({
         name: "widgetUpdateTime",
         x: sizing.width - 62,
         y: 6,
@@ -153,7 +179,7 @@ function createWidgetLayout() {
         fontSize: 10,
         align: "right",
     }))
-    widgetGroup.add(new Konva.TextPath({
+    texts.push(new Konva.TextPath({
         x: 10,
         y: sizing.height - 10,
         text: "Some text",
@@ -162,7 +188,9 @@ function createWidgetLayout() {
         rotation: 180,
     }))
 
-    return widgetGroup;
+    for (let i in texts) {
+        widgetGroup.add(texts[i]);
+    }
 }
 
 onMounted(() => {
