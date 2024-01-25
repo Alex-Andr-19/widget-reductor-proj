@@ -48,7 +48,7 @@ function createStageEventListeners() {
 function scrollHandler(e) {
     e.evt.preventDefault();
 
-    if (document.querySelector("body > input") === null) {
+    if (document.querySelector("#cavasReductor > input") === null) {
         if (e.evt.deltaX % 1 === 0 && e.evt.deltaY % 1 === 0) {
             const currentOffset = {
                 x: stage.value.offsetX(),
@@ -135,32 +135,51 @@ function addEditableToText(editableText) {
         var textPosition = editableText.getAbsolutePosition();
 
         var stageBox = stage.value.container().getBoundingClientRect();
+        
+        const parrentNode = document.getElementById("cavasReductor");
+        const { x: parrentNodeOffsetX, y: parrentNodeOffsetY } = parrentNode.getBoundingClientRect();
 
         var areaPosition = {
-            x: stageBox.left + textPosition.x,
-            y: stageBox.top + textPosition.y,
+            x: stageBox.left + textPosition.x - parrentNodeOffsetX,
+            y: stageBox.top + textPosition.y - parrentNodeOffsetY,
         };
-
+        
         var input = document.createElement('input');
-        document.body.appendChild(input);
 
         input.type = "text";
         input.value = editableText.text();
-        input.row = 1;
         input.style.position = 'absolute';
-        input.style.top = areaPosition.y + 'px';
-        input.style.left = areaPosition.x + 'px';
+
+        let topPosition = areaPosition.y;
+        let leftPosition = areaPosition.x;
+
+        const scaleValue = stage.value.scaleX();
+
+        input.style.fontSize = `${14 * scaleValue}px`;
 
         switch (editableText.id()) {
             case "widgetAsideText":
                 input.classList.add("widgetAsideText");
-                input.style.width = sizing.height - 45 + "px";
+                input.style.width = (sizing.height - 45) * scaleValue + "px";
+
+                const translateX = 116 * scaleValue;
+                const translateY = -105 * scaleValue;
+
+                input.style = input.style.cssText + `transform: rotate(-90deg) translateX(${translateX}px) translateY(${translateY}px);`;
+
                 break
+
             case "widgetTitle":
-                input.style.width = sizing.width - 85 + "px";
+                topPosition -= 3 * scaleValue;
+                leftPosition -= 3 * scaleValue;
+
+                input.style.width = (sizing.width - 85) * scaleValue + "px";
                 break
         }
+        input.style.top = topPosition + 'px';
+        input.style.left = leftPosition + 'px';
 
+        parrentNode.appendChild(input);
         input.focus();
 
         input.addEventListener('keydown', function (e) {
@@ -168,9 +187,13 @@ function addEditableToText(editableText) {
                 if (e.keyCode === 13) {
                     editableText.text(input.value);
                 }
-                document.body.removeChild(input);
+                parrentNode.removeChild(input);
             }
         });
+
+        input.addEventListener("blur", (e) => {
+            parrentNode.removeChild(input);
+        })
     });
 }
 
@@ -263,6 +286,6 @@ console.log("Created");
 }
 
 .widgetAsideText {
-    transform: rotate(-90deg) translateX(116px) translateY(-105px);
+    display: block;
 }
 </style>

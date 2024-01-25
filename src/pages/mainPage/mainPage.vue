@@ -11,7 +11,7 @@
                 Редактор
             </div>
 
-            <div class="mainPage__mainBlock__canvas">
+            <div id="cavasReductor" class="mainPage__mainBlock__canvas">
                 <myCanvas />
             </div>
         </div>
