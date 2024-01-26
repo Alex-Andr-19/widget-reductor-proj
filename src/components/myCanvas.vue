@@ -164,28 +164,13 @@ function addEditableToText(editableText) {
         const inputWidth = (editableText.textWidth + 50) * scaleValue;
         input.style.width = inputWidth + "px";
 
-        switch (editableText.id()) {
-            case "widgetAsideText":
-                input.classList.add("widgetAsideText");
-                // input.style.width = (sizing.height - 45) * scaleValue + "px";
+        topPosition -= 3 * scaleValue;
+        leftPosition -= 3 * scaleValue;
 
-                const translateX = 116 * scaleValue;
-                const translateY = -105 * scaleValue;
-                // const translateX = inputWidth * 0.54 * scaleValue;
-                // const translateY = -inputWidth * 0.49 * scaleValue;
-
-                input.style = input.style.cssText + `transform: rotate(-90deg) translateX(${translateX}px) translateY(${translateY}px);`;
-
-                break
-
-            case "widgetTitle":
-                topPosition -= 3 * scaleValue;
-                leftPosition -= 3 * scaleValue;
-
-                // input.style.width = (sizing.width - 85) * scaleValue + "px";
-                // input.style.width = (editableText.textWidth + 50) * scaleValue + "px";
-                break
+        if (editableText.attrs.rotation !== undefined) {
+            input.style = input.style.cssText + `transform: rotate(${editableText.attrs.rotation}deg) translateX(${inputWidth / 2}px) translateY(${-inputWidth / 2 + 6 * scaleValue}px);`;
         }
+
         input.style.top = topPosition + 'px';
         input.style.left = leftPosition + 'px';
 
@@ -195,17 +180,12 @@ function addEditableToText(editableText) {
         function removeInput() {
             parrentNode.removeChild(input);
         }
-        
+
         input.addEventListener('keydown', function (e) {
             if ([13, 27].includes(e.keyCode)) {
                 console.log(e.keyCode);
                 if (e.keyCode === 13) {
-                    // editableText.text(input.value);
-                    // editableText.update
-                    editableText.setAttrs({
-                        text: input.value,
-                    })
-                    console.log(editableText.text());
+                    editableText.text(input.value);
                 }
 
                 input.removeEventListener("blur", removeInput);
@@ -274,7 +254,7 @@ function createWidgetTemplateText(widgetGroup) {
         fontSize: 10,
         align: "right",
     }))
-    texts.push(new Konva.TextPath({
+    texts.push(new Konva.Text({
         id: "widgetAsideText",
         name: "editableText",
         x: 10,
@@ -282,7 +262,7 @@ function createWidgetTemplateText(widgetGroup) {
         text: "Краткое описание",
         fill: "#fff",
         data: 'C0,0 0,0 0,100',
-        rotation: 180,
+        rotation: -90,
     }))
 
     for (let i in texts) {
@@ -307,9 +287,5 @@ console.log("Created");
     height: 100%;
 
     overflow: clip;
-}
-
-.widgetAsideText {
-    display: block;
 }
 </style>
