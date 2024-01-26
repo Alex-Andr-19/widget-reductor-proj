@@ -7,6 +7,8 @@ import { ref, onMounted } from "vue";
 
 import Konva from "konva";
 
+import { clamp } from "@/helpers/neccessary";
+
 const stage = ref(undefined);
 
 const cameraObj = ref({
@@ -132,10 +134,8 @@ function createWidgetLayout() {
     return widgetGroup;
 }
 
-let tryToRemoveInput = false;
 function addEditableToText(editableText) {
     editableText.on('dblclick dbltap', () => {
-        console.log(editableText);
         var textPosition = editableText.getAbsolutePosition();
 
         var stageBox = stage.value.container().getBoundingClientRect();
@@ -161,14 +161,22 @@ function addEditableToText(editableText) {
 
         input.style.fontSize = `${14 * scaleValue}px`;
 
-        const inputWidth = (editableText.textWidth + 50) * scaleValue;
+        const inputWidth = clamp(100, (editableText.textWidth + 50), sizing.height - 30) * scaleValue;
         input.style.width = inputWidth + "px";
 
         topPosition -= 3 * scaleValue;
         leftPosition -= 3 * scaleValue;
 
         if (editableText.attrs.rotation !== undefined) {
-            input.style = input.style.cssText + `transform: rotate(${editableText.attrs.rotation}deg) translateX(${inputWidth / 2}px) translateY(${-inputWidth / 2 + 6 * scaleValue}px);`;
+            const rad = Math.PI * editableText.attrs.rotation / 180;
+            const translateX = (inputWidth / 2) * (1 - Math.cos(rad));
+            const translateY = (-inputWidth / 2) * -Math.sin(rad) + 6 * scaleValue;
+
+            input.style = input.style.cssText + `transform:
+                                                            rotate(${editableText.attrs.rotation}deg)
+                                                            translateX(${translateX}px)
+                                                            translateY(${translateY}px);
+                                                `;
         }
 
         input.style.top = topPosition + 'px';
@@ -183,9 +191,8 @@ function addEditableToText(editableText) {
 
         input.addEventListener('keydown', function (e) {
             if ([13, 27].includes(e.keyCode)) {
-                console.log(e.keyCode);
                 if (e.keyCode === 13) {
-                    editableText.text(input.value);
+                    editableText.text(input.value.slice(0, editableText.attrs.maxLength ?? input.value.length));
                 }
 
                 input.removeEventListener("blur", removeInput);
@@ -243,6 +250,7 @@ function createWidgetTemplateText(widgetGroup) {
         y: 10,
         text: "Название виджета",
         fill: "#fff",
+        maxLength: 66,
     }))
     texts.push(new Konva.Text({
         id: "widgetUpdateTime",
@@ -263,6 +271,7 @@ function createWidgetTemplateText(widgetGroup) {
         fill: "#fff",
         data: 'C0,0 0,0 0,100',
         rotation: -90,
+        maxLength: 35,
     }))
 
     for (let i in texts) {
