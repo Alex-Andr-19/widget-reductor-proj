@@ -28,6 +28,8 @@ const datetime = {
     time: `${String(today.getHours()).padStart(2, "0")}:${String(today.getMinutes()).padStart(2, "0")}:${String(today.getSeconds()).padStart(2, "0")}`,
 }
 
+const parrentContainer = "canvasContainer";
+
 /* =========================== */
 
 
@@ -48,7 +50,7 @@ function createStageEventListeners() {
 function scrollHandler(e) {
     e.evt.preventDefault();
 
-    if (document.querySelector("#cavasReductor > input") === null) {
+    if (document.querySelector(`#${parrentContainer} > input`) === null) {
         if (e.evt.deltaX % 1 === 0 && e.evt.deltaY % 1 === 0) {
             const currentOffset = {
                 x: stage.value.offsetX(),
@@ -130,20 +132,22 @@ function createWidgetLayout() {
     return widgetGroup;
 }
 
+let tryToRemoveInput = false;
 function addEditableToText(editableText) {
     editableText.on('dblclick dbltap', () => {
+        console.log(editableText);
         var textPosition = editableText.getAbsolutePosition();
 
         var stageBox = stage.value.container().getBoundingClientRect();
-        
-        const parrentNode = document.getElementById("cavasReductor");
+
+        const parrentNode = document.getElementById(parrentContainer);
         const { x: parrentNodeOffsetX, y: parrentNodeOffsetY } = parrentNode.getBoundingClientRect();
 
         var areaPosition = {
             x: stageBox.left + textPosition.x - parrentNodeOffsetX,
             y: stageBox.top + textPosition.y - parrentNodeOffsetY,
         };
-        
+
         var input = document.createElement('input');
 
         input.type = "text";
@@ -157,13 +161,18 @@ function addEditableToText(editableText) {
 
         input.style.fontSize = `${14 * scaleValue}px`;
 
+        const inputWidth = (editableText.textWidth + 50) * scaleValue;
+        input.style.width = inputWidth + "px";
+
         switch (editableText.id()) {
             case "widgetAsideText":
                 input.classList.add("widgetAsideText");
-                input.style.width = (sizing.height - 45) * scaleValue + "px";
+                // input.style.width = (sizing.height - 45) * scaleValue + "px";
 
                 const translateX = 116 * scaleValue;
                 const translateY = -105 * scaleValue;
+                // const translateX = inputWidth * 0.54 * scaleValue;
+                // const translateY = -inputWidth * 0.49 * scaleValue;
 
                 input.style = input.style.cssText + `transform: rotate(-90deg) translateX(${translateX}px) translateY(${translateY}px);`;
 
@@ -173,7 +182,8 @@ function addEditableToText(editableText) {
                 topPosition -= 3 * scaleValue;
                 leftPosition -= 3 * scaleValue;
 
-                input.style.width = (sizing.width - 85) * scaleValue + "px";
+                // input.style.width = (sizing.width - 85) * scaleValue + "px";
+                // input.style.width = (editableText.textWidth + 50) * scaleValue + "px";
                 break
         }
         input.style.top = topPosition + 'px';
@@ -182,18 +192,28 @@ function addEditableToText(editableText) {
         parrentNode.appendChild(input);
         input.focus();
 
+        function removeInput() {
+            parrentNode.removeChild(input);
+        }
+        
         input.addEventListener('keydown', function (e) {
             if ([13, 27].includes(e.keyCode)) {
+                console.log(e.keyCode);
                 if (e.keyCode === 13) {
-                    editableText.text(input.value);
+                    // editableText.text(input.value);
+                    // editableText.update
+                    editableText.setAttrs({
+                        text: input.value,
+                    })
+                    console.log(editableText.text());
                 }
-                parrentNode.removeChild(input);
+
+                input.removeEventListener("blur", removeInput);
+                removeInput()
             }
         });
 
-        input.addEventListener("blur", (e) => {
-            parrentNode.removeChild(input);
-        })
+        input.addEventListener("blur", removeInput)
     });
 }
 
@@ -259,7 +279,7 @@ function createWidgetTemplateText(widgetGroup) {
         name: "editableText",
         x: 10,
         y: sizing.height - 10,
-        text: "Some text",
+        text: "Краткое описание",
         fill: "#fff",
         data: 'C0,0 0,0 0,100',
         rotation: 180,
@@ -281,8 +301,12 @@ console.log("Created");
 
 <style lang="scss">
 #canvasContainer {
+    position: relative;
+
     width: 100%;
     height: 100%;
+
+    overflow: clip;
 }
 
 .widgetAsideText {
