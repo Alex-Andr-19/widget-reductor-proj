@@ -7,7 +7,7 @@ import { ref, onMounted } from "vue";
 
 import Konva from "konva";
 
-import { clamp } from "@/helpers/neccessary";
+import { clamp, collision } from "@/helpers/neccessary";
 
 const stage = ref(undefined);
 
@@ -102,8 +102,21 @@ function createLayer() {
 
     addRectToFirstLayer();
 }
+
 function getMainLayer() {
     return stage.value.find(".mainLayer")[0];
+}
+function getWidgetGroup() {
+    return stage.value.find(".widgetGroup")[0];
+}
+function getWidgetWrapperGroup() {
+    return stage.value.find(".widgetWrapper")[0];
+}
+function getTriggerRect() {
+    return stage.value.find(".triggerRect")[0];
+}
+function getWidgetWrapperFonRect() {
+    return stage.value.find(".widgetWrapperFonRect")[0];
 }
 
 function addRectToFirstLayer() {
@@ -115,6 +128,7 @@ function addRectToFirstLayer() {
     for (let i in allTemplateEditableText) {
         addEditableToText(allTemplateEditableText[i]);
     }
+    createFonRectMousemoveHandler();
 }
 
 function createWidgetLayout() {
@@ -208,6 +222,8 @@ function createWidgetTemplateChildren(widgetGroup) {
     createWidgetTemplateRects(widgetGroup);
 
     createWidgetTemplateText(widgetGroup);
+
+    createWidgetWrapperGroup(widgetGroup);
 }
 
 function createWidgetTemplateRects(widgetGroup) {
@@ -265,7 +281,7 @@ function createWidgetTemplateText(widgetGroup) {
     texts.push(new Konva.Text({
         id: "widgetAsideText",
         name: "editableText",
-        x: 10,
+        x: 5,
         y: sizing.height - 10,
         text: "Краткое описание",
         fill: "#fff",
@@ -277,6 +293,152 @@ function createWidgetTemplateText(widgetGroup) {
     for (let i in texts) {
         widgetGroup.add(texts[i]);
     }
+}
+
+function createWidgetWrapperGroup(widgetGroup) {
+    const width = sizing.width - 26;
+    const height = sizing.height - 31;
+    const padding = 12;
+
+    const fonRect = new Konva.Rect({
+        name: "widgetWrapperFonRect",
+        x: 0,
+        y: 0,
+        width,
+        height,
+        cornerRadius: [0, 0, 6, 0],
+        stroke: "#40434c",
+        // stroke: "#f00",
+        strokeWidth: 1,
+    })
+
+    const triggerRect = new Konva.Rect({
+        name: "triggerRect",
+        x: padding,
+        y: padding,
+        width: 0,
+        height: 0,
+        stroke: "#40434c",
+        strokeWidth: 1,
+        cornerRadius: 6,
+    });
+
+    const widgetWrapperGroup = new Konva.Group({
+        name: "widgetWrapper",
+        x: 25,
+        y: 30,
+        width: sizing.width - 25,
+        height: sizing.height - 30,
+        padding,
+    })
+
+    widgetWrapperGroup.add(fonRect);
+    widgetWrapperGroup.add(triggerRect);
+
+    widgetGroup.add(widgetWrapperGroup);
+}
+
+function createFonRectMousemoveHandler() {
+    const rect = getWidgetWrapperFonRect();
+    const width = rect.width();
+    const height = rect.height();
+    
+    const padding = getWidgetWrapperGroup().attrs.padding;
+    const realWidth = width - padding * 2;
+    const realHeight = height - padding * 2;
+
+    const triggersObj = [
+        {
+            name: "topRow",
+            trigger: {
+                x: width / 2 - width / 32,
+                y: 0,
+                width: width / 16,
+                height: height / 2 - height / 18,
+            },
+            target: {
+                x: padding,
+                y: padding,
+                width: realWidth,
+                height: realHeight / 2,
+            },
+        },
+        {
+            name: "rightColumn",
+            trigger: {
+                x: width / 2 + width / 32,
+                y: height / 2 - height / 18,
+                width: width / 2 - width / 32,
+                height: height / 9,
+            },
+            target: {
+                x: realWidth / 2 + padding,
+                y: padding,
+                width: realWidth / 2,
+                height: realHeight,
+            },
+        },
+        {
+            name: "bottomRow",
+            trigger: {
+                x: width / 2 - width / 32,
+                y: height / 2 + height / 18,
+                width: width / 16,
+                height: height / 2 - height / 18,
+            },
+            target: {
+                x: padding,
+                y: realHeight / 2 + padding,
+                width: realWidth,
+                height: realHeight / 2,
+            },
+        },
+        {
+            name: "leftColumn",
+            trigger: {
+                x: 0,
+                y: height / 2 - height / 18,
+                width: width / 2 - width / 32,
+                height: height / 9,
+            },
+            target: {
+                x: padding,
+                y: padding,
+                width: realWidth / 2,
+                height: realHeight,
+            },
+        },
+    ];
+
+    rect.on("mousemove", function (e) {
+        // console.log(rect.getRelativePointerPosition());
+        const triggerRect = getTriggerRect();
+        let hasCollision = false;
+        for (let i in triggersObj) {    
+            const pointerPixel = {
+                ...rect.getRelativePointerPosition(),
+                width: 1,
+                height: 1,
+            }
+            if (collision(triggersObj[i].trigger, pointerPixel)) {
+                triggerRect.setAttrs(triggersObj[i].target);
+                hasCollision = true;
+                break;
+            }
+        }
+        
+        if (!hasCollision) {
+            triggerRect.setAttrs({
+                width: 0, height: 0,
+            });
+        }
+        // }
+    })
+    // rect.on("mouseleave", function (e) {
+    //     getTriggerRect().setAttrs({
+    //         x: 0, y: 0, width: 0, height: 0,
+    //     })
+    // })
 }
 
 onMounted(() => {
