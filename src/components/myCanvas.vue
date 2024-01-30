@@ -322,6 +322,9 @@ function createWidgetWrapperGroup(widgetGroup) {
         strokeWidth: 1,
         cornerRadius: 6,
     });
+    triggerRect.on("mousemove", (e) => {
+        fonRect.fire("mousemove", e)
+    })
 
     const widgetWrapperGroup = new Konva.Group({
         name: "widgetWrapper",
@@ -342,12 +345,27 @@ function createFonRectMousemoveHandler() {
     const rect = getWidgetWrapperFonRect();
     const width = rect.width();
     const height = rect.height();
-    
+
     const padding = getWidgetWrapperGroup().attrs.padding;
     const realWidth = width - padding * 2;
     const realHeight = height - padding * 2;
 
     const triggersObj = [
+        {
+            name: "topLeftRect",
+            trigger: {
+                x: 0,
+                y: 0,
+                width: width / 2 - width / 32,
+                height: height / 2 - height / 18,
+            },
+            target: {
+                x: padding,
+                y: padding,
+                width: realWidth / 2,
+                height: realHeight / 2,
+            },
+        },
         {
             name: "topRow",
             trigger: {
@@ -360,6 +378,21 @@ function createFonRectMousemoveHandler() {
                 x: padding,
                 y: padding,
                 width: realWidth,
+                height: realHeight / 2,
+            },
+        },
+        {
+            name: "topRightRect",
+            trigger: {
+                x: width / 2 + width / 32,
+                y: 0,
+                width: width / 2 - width / 32,
+                height: height / 2 - height / 18,
+            },
+            target: {
+                x: realWidth / 2 + padding,
+                y: padding,
+                width: realWidth / 2,
                 height: realHeight / 2,
             },
         },
@@ -379,6 +412,21 @@ function createFonRectMousemoveHandler() {
             },
         },
         {
+            name: "bottomRightRect",
+            trigger: {
+                x: width / 2 + width / 32,
+                y: height / 2 + height / 18,
+                width: width / 2 - width / 32,
+                height: height / 2 - height / 18,
+            },
+            target: {
+                x: realWidth / 2 + padding,
+                y: realHeight / 2 + padding,
+                width: realWidth / 2,
+                height: realHeight / 2,
+            },
+        },
+        {
             name: "bottomRow",
             trigger: {
                 x: width / 2 - width / 32,
@@ -390,6 +438,21 @@ function createFonRectMousemoveHandler() {
                 x: padding,
                 y: realHeight / 2 + padding,
                 width: realWidth,
+                height: realHeight / 2,
+            },
+        },
+        {
+            name: "bottomLeftRect",
+            trigger: {
+                x: padding,
+                y: height / 2 + height / 18,
+                width: width / 2 - width / 32,
+                height: height / 2 - height / 18,
+            },
+            target: {
+                x: padding,
+                y: realHeight / 2 + padding,
+                width: realWidth / 2,
                 height: realHeight / 2,
             },
         },
@@ -408,13 +471,28 @@ function createFonRectMousemoveHandler() {
                 height: realHeight,
             },
         },
+        {
+            name: "center",
+            trigger: {
+                x: width / 2 - width / 32,
+                y: height / 2 - height / 18,
+                width: width / 16,
+                height: height / 9,
+            },
+            target: {
+                x: padding,
+                y: padding,
+                width: realWidth,
+                height: realHeight,
+            },
+        },
     ];
 
     rect.on("mousemove", function (e) {
-        // console.log(rect.getRelativePointerPosition());
         const triggerRect = getTriggerRect();
         let hasCollision = false;
-        for (let i in triggersObj) {    
+
+        for (let i in triggersObj) {
             const pointerPixel = {
                 ...rect.getRelativePointerPosition(),
                 width: 1,
@@ -422,23 +500,18 @@ function createFonRectMousemoveHandler() {
             }
             if (collision(triggersObj[i].trigger, pointerPixel)) {
                 triggerRect.setAttrs(triggersObj[i].target);
+
                 hasCollision = true;
                 break;
             }
         }
-        
+
         if (!hasCollision) {
             triggerRect.setAttrs({
                 width: 0, height: 0,
             });
         }
-        // }
     })
-    // rect.on("mouseleave", function (e) {
-    //     getTriggerRect().setAttrs({
-    //         x: 0, y: 0, width: 0, height: 0,
-    //     })
-    // })
 }
 
 onMounted(() => {
