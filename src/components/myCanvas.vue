@@ -145,6 +145,17 @@ function createWidgetLayout() {
 
     createWidgetTemplateChildren(widgetGroup);
 
+    widgetGroup.on("mouseleave", function (e) {
+        const triggerRect = getTriggerRect();
+
+        setTimeout(() => {
+            triggerRect.setAttrs({
+                x: 0, y: 0,
+                width: 0, height: 0,
+            });
+        }, 50)
+    })
+
     return widgetGroup;
 }
 
@@ -514,7 +525,7 @@ function createFonRectMousemoveHandler() {
     })
 }
 
-function animateRectResizing(rectFrom, rectTo, animationDuration=40) {
+function animateRectResizing(rectFrom, rectTo, animationDuration = 40) {
     const oldSizing = {
         x: rectFrom.x(),
         y: rectFrom.y(),
