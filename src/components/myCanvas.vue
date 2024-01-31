@@ -319,7 +319,7 @@ function createWidgetWrapperGroup(widgetGroup) {
         width: 0,
         height: 0,
         stroke: "#40434c",
-        strokeWidth: 1,
+        strokeWidth: 2,
         cornerRadius: 6,
     });
     triggerRect.on("mousemove", (e) => {
@@ -499,7 +499,7 @@ function createFonRectMousemoveHandler() {
                 height: 1,
             }
             if (collision(triggersObj[i].trigger, pointerPixel)) {
-                triggerRect.setAttrs(triggersObj[i].target);
+                animateRectResizing(triggerRect, triggersObj[i].target);
 
                 hasCollision = true;
                 break;
@@ -512,6 +512,41 @@ function createFonRectMousemoveHandler() {
             });
         }
     })
+}
+
+function animateRectResizing(rectFrom, rectTo, animationDuration=40) {
+    const oldSizing = {
+        x: rectFrom.x(),
+        y: rectFrom.y(),
+        width: rectFrom.width(),
+        height: rectFrom.height(),
+    }
+
+    const steps = {
+        x: rectTo.x - oldSizing.x,
+        y: rectTo.y - oldSizing.y,
+        width: rectTo.width - oldSizing.width,
+        height: rectTo.height - oldSizing.height,
+    };
+
+    let animation = new Konva.Animation((frame) => {
+        let percent = frame.time / animationDuration;
+
+        rectFrom.setAttrs({
+            x: oldSizing.x + (steps.x * percent),
+            y: oldSizing.y + (steps.y * percent),
+            width: oldSizing.width + (steps.width * percent),
+            height: oldSizing.height + (steps.height * percent),
+        })
+
+        if (frame.time > animationDuration) {
+            animation.stop();
+            rectFrom.setAttrs(rectTo);
+        }
+    }, getMainLayer());
+    if (!animation.isRunning()) {
+        animation.start();
+    }
 }
 
 onMounted(() => {
