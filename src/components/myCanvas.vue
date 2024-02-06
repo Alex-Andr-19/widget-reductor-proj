@@ -112,8 +112,11 @@ function getWidgetGroup() {
 function getWidgetWrapperGroup() {
     return stage.value.find(".widgetWrapper")[0];
 }
-function getTriggerRect() {
-    return stage.value.find(".triggerRect")[0];
+// function getTriggerRect() {
+//     return stage.value.find(".triggerRect")[0];
+// }
+function getTriggerGroup() {
+    return stage.value.find(".triggerGroup")[0];
 }
 function getWidgetWrapperFonRect() {
     return stage.value.find(".widgetWrapperFonRect")[0];
@@ -146,13 +149,16 @@ function createWidgetLayout() {
     createWidgetTemplateChildren(widgetGroup);
 
     widgetGroup.on("mouseleave", function (e) {
-        const triggerRect = getTriggerRect();
+        const triggerGroup = getTriggerGroup();
+        const triggerRect = triggerGroup.children[0];
+        const triggerPlus = triggerGroup.children[1];
 
         setTimeout(() => {
             triggerRect.setAttrs({
-                x: 0, y: 0,
+                // x: 0, y: 0,
                 width: 0, height: 0,
             });
+            triggerPlus.text("");
         }, 50)
     })
 
@@ -319,20 +325,38 @@ function createWidgetWrapperGroup(widgetGroup) {
         height,
         cornerRadius: [0, 0, 6, 0],
         stroke: "#40434c",
-        // stroke: "#f00",
         strokeWidth: 1,
     })
 
-    const triggerRect = new Konva.Rect({
-        name: "triggerRect",
+    const triggerGroup = new Konva.Group({
+        name: "triggerGroup",
         x: padding,
         y: padding,
+        width: 0,
+        height: 0,
+    })
+    const triggerRect = new Konva.Rect({
+        name: "triggerRect",
+        x: 0,
+        y: 0,
         width: 0,
         height: 0,
         stroke: "#40434c",
         strokeWidth: 2,
         cornerRadius: 6,
     });
+    const triggerPlus = new Konva.Text({
+        id: "triggerPlus",
+        name: "triggerPlus",
+        x: 0,
+        y: 0,
+        text: "",
+        fontSize: 56,
+        fill: "#6b7181",
+    })
+
+    triggerGroup.add(triggerRect);
+    triggerGroup.add(triggerPlus);
     triggerRect.on("mousemove", (e) => {
         fonRect.fire("mousemove", e)
     })
@@ -347,7 +371,7 @@ function createWidgetWrapperGroup(widgetGroup) {
     })
 
     widgetWrapperGroup.add(fonRect);
-    widgetWrapperGroup.add(triggerRect);
+    widgetWrapperGroup.add(triggerGroup);
 
     widgetGroup.add(widgetWrapperGroup);
 }
@@ -500,7 +524,10 @@ function createFonRectMousemoveHandler() {
     ];
 
     rect.on("mousemove", function (e) {
-        const triggerRect = getTriggerRect();
+        const triggerGroup = getTriggerGroup();
+        const triggerRect = triggerGroup.children[0];
+        const triggerPlus = triggerGroup.children[1];
+
         let hasCollision = false;
 
         for (let i in triggersObj) {
@@ -510,7 +537,19 @@ function createFonRectMousemoveHandler() {
                 height: 1,
             }
             if (collision(triggersObj[i].trigger, pointerPixel)) {
-                animateRectResizing(triggerRect, triggersObj[i].target);
+                // animateRectResizing(triggerRect, triggersObj[i].target);
+                triggerGroup.setAttrs(triggersObj[i].target);
+                triggerRect.setAttrs({
+                    x: 0,
+                    y: 0,
+                    width: triggerGroup.width(),
+                    height: triggerGroup.height(),
+                });
+                triggerPlus.setAttrs({
+                    text: "+",
+                    x: Math.round(triggerGroup.width() / 2) - Math.round(triggerPlus.fontSize() / 2) + 13,
+                    y: Math.round(triggerGroup.height() / 2) - Math.round(triggerPlus.fontSize() / 2) + 5,
+                })
 
                 hasCollision = true;
                 break;
@@ -525,7 +564,7 @@ function createFonRectMousemoveHandler() {
     })
 }
 
-function animateRectResizing(rectFrom, rectTo, animationDuration = 40) {
+function animateRectResizing(rectFrom, rectTo, animationDuration = 60) {
     const oldSizing = {
         x: rectFrom.x(),
         y: rectFrom.y(),
